@@ -2,306 +2,255 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> <title>生日快乐！</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>生日快乐！</title>
+
 <style>
-  body {
-    margin: 0;
-    overflow: hidden;
-    background: black;
-    touch-action: manipulation; /* 🌟 优化：移动端交互 */
-  }
-  canvas { display: block; }
+body{
+  margin:0;
+  overflow:hidden;
+  background:black;
+  touch-action:none;
+  user-select:none;
+}
+canvas{display:block}
 
-  #startScreen {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 4em;
-    cursor: pointer;
-    z-index: 5;
-    animation: bounce 1s infinite alternate;
-    color: white;
-    text-shadow: 0 0 10px hotpink;
-    padding: 20px;
-    background: rgba(0, 0, 0, 0.5); 
-    border-radius: 10px;
-    text-align: center;
-  }
-  #startScreen span {
-    display: block;
-    font-size: 0.35em;
-    color: white;
-    text-align: center;
-    margin-top: 10px;
-  }
-  @keyframes bounce {
-    from { transform: translate(-50%, -50%) scale(1); }
-    to   { transform: translate(-50%, -60%) scale(1.1); } 
-  }
+#startScreen{
+  position:absolute;
+  top:50%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:4em;
+  color:white;
+  text-shadow:0 0 10px hotpink;
+  animation:bounce 1s infinite alternate;
+  z-index:5;
+  cursor:pointer;
+  text-align:center;
+}
+#startScreen span{
+  display:block;
+  font-size:.35em;
+  margin-top:10px;
+}
 
-  #finalMessage {
-    position: absolute;
-    top: 50%; 
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 4em;
-    font-weight: bold;
-    background: linear-gradient(90deg, #ffc0cb, #ff69b4, #ff4500);
-    -webkit-background-clip: text;
-    color: transparent;
-    animation: glow 2s infinite;
-    display: none;
-    z-index: 3;
-    pointer-events: none;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-    padding: 10px 20px;
-    white-space: nowrap; /* 确保不换行 */
-  }
+@keyframes bounce{
+  from{transform:translate(-50%,-50%) scale(1)}
+  to{transform:translate(-50%,-60%) scale(1.1)}
+}
 
-  @keyframes glow {
-    0% { filter: drop-shadow(0 0 5px hotpink); }
-    50% { filter: drop-shadow(0 0 20px pink); }
-    100% { filter: drop-shadow(0 0 5px hotpink); }
-  }
+#finalMessage{
+  position:absolute;
+  top:45%;
+  left:50%;
+  transform:translate(-50%,-50%);
+  font-size:4em;
+  font-weight:bold;
+  background:linear-gradient(90deg,#ffc0cb,#ff69b4,#ff4500);
+  -webkit-background-clip:text;
+  color:transparent;
+  animation:glow 2s infinite;
+  display:none;
+  z-index:3;
+  pointer-events:none;
+  white-space:nowrap;
+}
+
+@keyframes glow{
+  0%{filter:drop-shadow(0 0 5px hotpink)}
+  50%{filter:drop-shadow(0 0 20px pink)}
+  100%{filter:drop-shadow(0 0 5px hotpink)}
+}
 </style>
 </head>
+
 <body>
 
-<div id="startScreen">👆 点击这里开始 🎉<span></span></div>
+<div id="startScreen">👆<span>点这里开始</span></div>
 <div id="finalMessage"></div>
 <canvas id="canvas"></canvas>
 
 <script>
-// =======================================================
-// ⭐ 核心设置：寿星的名字
-// =======================================================
-const NAME = "绚丽"; 
+// =========================
+// 基本配置
+// =========================
+const NAME="绚丽";
+const MAX_PARTICLES=2800;
 
-// =======================================================
-// 初始化和Canvas设置
-// =======================================================
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-const startScreen = document.getElementById("startScreen");
-const finalMessage = document.getElementById("finalMessage");
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+const finalMessage=document.getElementById("finalMessage");
 
-// 初始化动态内容
-startScreen.querySelector("span").innerText = `点击任意处，欣赏为你准备的生日烟花`;
-finalMessage.innerText = `🎉 生日快乐，${NAME}！ 🎉`;
+finalMessage.innerText=`🎉 生日快乐，${NAME}！ 🎉`;
 
-canvas.width = innerWidth;
-canvas.height = innerHeight;
+canvas.width=innerWidth;
+canvas.height=innerHeight;
 
-// 状态变量
-let particles = [];
-let started = false;
-let messageShown = false;
-
-// =======================================================
-// 粒子 (Particle) 类
-// =======================================================
-class Particle {
-  constructor(x, y, vx, vy, color) {
-    this.x = x;
-    this.y = y;
-    this.vx = vx;
-    this.vy = vy;
-    this.alpha = 1;
-    this.color = color;
+// =========================
+// 粒子类
+// =========================
+class Particle{
+  constructor(x,y,vx,vy,color){
+    this.x=x;this.y=y;
+    this.vx=vx;this.vy=vy;
+    this.alpha=1;
+    this.color=color;
   }
-  update() {
-    this.x += this.vx;
-    this.y += this.vy;
-    this.alpha -= 0.015;
-    this.vy += 0.02; // 增加重力效果，粒子下落
+  update(){
+    this.x+=this.vx;
+    this.y+=this.vy;
+    this.vy+=0.018;
+    this.alpha*=0.97;
   }
-  draw() {
-    ctx.globalAlpha = this.alpha;
-    ctx.fillStyle = this.color;
+  draw(){
+    ctx.globalAlpha=this.alpha;
+    ctx.fillStyle=this.color;
     ctx.beginPath();
-    const radius = 2 * (this.alpha > 0.5 ? 1 : this.alpha * 2);
-    ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
+    ctx.arc(this.x,this.y,2,0,Math.PI*2);
     ctx.fill();
   }
 }
 
-// =======================================================
-// 烟花效果函数
-// =======================================================
+// =========================
+// 粒子池
+// =========================
+let particles=[];
+let started=false;
+let messageShown=false;
 
-/* 普通烟花 */
-function randomFirework(x, y) {
-  x = x || Math.random() * canvas.width;
-  y = y || Math.random() * canvas.height * 0.7;
-  const color = `hsl(${Math.random() * 360},100%,50%)`;
-  for (let i = 0; i < 60; i++) {
+// =========================
+// 普通烟花
+// =========================
+function randomFirework(x,y){
+  if(particles.length>MAX_PARTICLES)return;
+  x??=Math.random()*canvas.width;
+  y??=Math.random()*canvas.height*.7;
+  const color=`hsl(${Math.random()*360},100%,55%)`;
+  for(let i=0;i<60;i++){
     particles.push(new Particle(
-      x, y,
-      (Math.random() - 0.5) * 8,
-      (Math.random() - 0.5) * 8,
+      x,y,
+      (Math.random()-.5)*8,
+      (Math.random()-.5)*8,
       color
     ));
   }
 }
 
-/* 💖 心形 + 名字（跟随点击位置动态出现） */
-function heartWithName(cx, cy) {
-  const heartColor = "hotpink";
-  const nameColor = "pink";
+// =========================
+// 💖 心形 + 名字（真正一起爆）
+// =========================
+let textPoints=null;
 
-  // 心形粒子
-  for (let t = 0; t < Math.PI * 2; t += 0.08) {
-    const x = 16 * Math.pow(Math.sin(t), 3);
-    const y = -(13 * Math.cos(t)
-              - 5 * Math.cos(2*t)
-              - 2 * Math.cos(3*t)
-              - Math.cos(4*t));
-    particles.push(new Particle(
-      cx, cy,
-      x * 0.18,
-      y * 0.18,
-      heartColor
-    ));
-  }
-
-  // 名字粒子（使用临时 canvas 获取文本形状）
-  const temp = document.createElement("canvas");
-  const tctx = temp.getContext("2d");
-  temp.width = 300;
-  temp.height = 120;
-
-  tctx.fillStyle = "white";
-  tctx.font = "bold 60px Arial";
-  tctx.textAlign = "center";
-  tctx.textBaseline = "middle";
-  tctx.fillText(NAME, 150, 60);
-
-  const img = tctx.getImageData(0, 0, temp.width, temp.height).data;
-
-  for (let y = 0; y < temp.height; y += 4) {
-    for (let x = 0; x < temp.width; x += 4) {
-      if (img[(y * temp.width + x) * 4 + 3] > 150) { 
-        particles.push(new Particle(
-          cx + x - 150, // 确保名字中心点在 cx
-          cy + y - 60,  // 确保名字中心点在 cy
-          (Math.random() - 0.5) * 1.5,
-          (Math.random() - 0.5) * 1.5,
-          nameColor
-        ));
+function buildTextPoints(){
+  const t=document.createElement("canvas");
+  t.width=300;t.height=120;
+  const c=t.getContext("2d");
+  c.fillStyle="white";
+  c.font="bold 60px Arial";
+  c.textAlign="center";
+  c.textBaseline="middle";
+  c.fillText(NAME,150,60);
+  const img=c.getImageData(0,0,300,120).data;
+  textPoints=[];
+  for(let y=0;y<120;y+=4){
+    for(let x=0;x<300;x+=4){
+      if(img[(y*300+x)*4+3]>150){
+        textPoints.push({x:x-150,y:y-60});
       }
     }
   }
 }
 
-// =======================================================
-// 动画循环
-// =======================================================
-function animate() {
-  // 🌟 残影效果：每次绘制都用半透明黑块覆盖，形成粒子拖尾
-  ctx.fillStyle = "rgba(0,0,0,0.1)"; 
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  
-  particles.forEach((p, i) => {
-    p.update();
-    p.draw();
-    if (p.alpha <= 0) particles.splice(i, 1);
+buildTextPoints();
+
+function heartWithName(cx,cy){
+  if(particles.length>MAX_PARTICLES)return;
+
+  for(let t=0;t<Math.PI*2;t+=.08){
+    const x=16*Math.pow(Math.sin(t),3);
+    const y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
+    particles.push(new Particle(
+      cx,cy,
+      x*.18,y*.18,
+      "hotpink"
+    ));
+  }
+
+  textPoints.forEach(p=>{
+    particles.push(new Particle(
+      cx,cy,
+      p.x*.06+ (Math.random()-.5)*1,
+      p.y*.06+ (Math.random()-.5)*1,
+      "pink"
+    ));
   });
+}
+
+// =========================
+// 动画
+// =========================
+function animate(){
+  ctx.fillStyle="rgba(0,0,0,.15)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.update();p.draw();
+    if(p.alpha<.03)particles.splice(i,1);
+  }
   requestAnimationFrame(animate);
 }
 animate();
 
-// =======================================================
-// 启动逻辑
-// =======================================================
-document.getElementById("startScreen").onclick = () => {
-  document.getElementById("startScreen").style.display = "none";
-  started = true;
-  randomFirework(canvas.width/2, canvas.height/2);
-  // 每隔 350ms 自动随机发射一个烟花
-  setInterval(randomFirework, 350); 
-  
-  // 8秒后显示最终祝福语
-  setTimeout(() => {
-    finalMessage.style.display = "block";
-    messageShown = true;
-  }, 8000);
+// =========================
+// 启动
+// =========================
+document.getElementById("startScreen").onclick=()=>{
+  document.getElementById("startScreen").style.display="none";
+  started=true;
+  setInterval(randomFirework,350);
+  setTimeout(()=>{
+    finalMessage.style.display="block";
+    messageShown=true;
+  },8000);
 };
 
-// =======================================================
-// 🌟 交互逻辑 (支持 PC 鼠标 和 移动端触摸/长按/双击)
-// =======================================================
-let pressTimer = null;
-let lastTapTime = 0; 
-let lastClickPos = {x: 0, y: 0}; // 记录最后一次点击位置
-const TAP_THRESHOLD = 300; 
-const LONG_PRESS_THRESHOLD = 500; 
+// =========================
+// 统一交互（PC + 手机）
+// =========================
+let timer=null,lastTap=0,pos={x:0,y:0};
 
-// 核心处理函数：区分单击/双击/长按
-function handleInteraction(clientX, clientY, isTouch) {
-    if (!started || !messageShown) return;
+canvas.addEventListener("pointerdown",e=>{
+  if(!started||!messageShown)return;
+  pos={x:e.clientX,y:e.clientY};
+  const now=Date.now();
 
-    const now = Date.now();
-    lastClickPos = {x: clientX, y: clientY};
+  if(now-lastTap<300){
+    clearTimeout(timer);
+    timer=null;
+    lastTap=0;
+    heartWithName(pos.x,pos.y);
+    return;
+  }
 
-    // 1. 双击 (触发心形+名字)
-    if (now - lastTapTime < TAP_THRESHOLD) {
-      if (pressTimer) clearTimeout(pressTimer); 
-      pressTimer = null;
-      lastTapTime = 0; 
-      heartWithName(clientX, clientY);
-      return; 
-    }
-
-    lastTapTime = now;
-    
-    // 2. 长按 / 单击 计时器
-    pressTimer = setTimeout(() => {
-        // 计时器运行到期，视为长按
-        heartWithName(clientX, clientY);
-        pressTimer = null;
-    }, LONG_PRESS_THRESHOLD);
-}
-
-// 释放处理函数：用于识别单击
-function handleRelease() {
-    if (!started || !messageShown) return;
-    
-    if (pressTimer) {
-        clearTimeout(pressTimer);
-        // 如果 pressTimer 被清除，且在双击时间外 (双击逻辑已优先处理)
-        // 且按下时间小于长按阈值，则视为单击
-        if (Date.now() - lastTapTime < LONG_PRESS_THRESHOLD) {
-             randomFirework(lastClickPos.x, lastClickPos.y); 
-        }
-        pressTimer = null;
-    }
-}
-
-
-// --- A. 桌面端 (Mouse) 交互 ---
-document.addEventListener("mousedown", e => {
-    handleInteraction(e.clientX, e.clientY, false);
+  lastTap=now;
+  timer=setTimeout(()=>{
+    heartWithName(pos.x,pos.y);
+    timer=null;
+  },500);
 });
-document.addEventListener("mouseup", handleRelease);
 
+canvas.addEventListener("pointerup",()=>{
+  if(timer){
+    clearTimeout(timer);
+    randomFirework(pos.x,pos.y);
+    timer=null;
+  }
+});
 
-// --- B. 移动端 (Touch) 交互 ---
-document.addEventListener("touchstart", e => {
-    if (!started || !messageShown) return;
-    e.preventDefault(); // 阻止默认的缩放或上下文菜单
-    const touch = e.touches[0];
-    handleInteraction(touch.clientX, touch.clientY, true);
-}, { passive: false });
-document.addEventListener("touchend", handleRelease);
-
-
-// 窗口大小变化时重设 Canvas
-onresize = () => {
-  canvas.width = innerWidth;
-  canvas.height = innerHeight;
+onresize=()=>{
+  canvas.width=innerWidth;
+  canvas.height=innerHeight;
 };
 </script>
-
 </body>
 </html>
