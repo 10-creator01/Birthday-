@@ -2,7 +2,7 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
 <title>生日快乐</title>
 
 <style>
@@ -16,7 +16,7 @@ body{
 }
 canvas{display:block}
 
-/* 开始手势 */
+/* 👆 开始手势 */
 #startScreen{
   position:absolute;
   top:50%;left:50%;
@@ -34,7 +34,7 @@ canvas{display:block}
   to{transform:translate(-50%,-60%) scale(1.12)}
 }
 
-/* 生日快乐（渐显） */
+/* 🎉 生日快乐（渐显） */
 #finalMessage{
   position:absolute;
   top:45%;left:50%;
@@ -64,67 +64,114 @@ canvas{display:block}
 <canvas id="canvas"></canvas>
 
 <script>
-/* ================== 🎵 微信可播放的生日歌 ================== */
+/* ================== 🎵 微信可响生日歌 ================== */
 let audioCtx;
-let musicStarted = false;
-let musicTimer = null;
+let musicStarted=false;
 
-function initAudio() {
-  if (musicStarted) return;
-  musicStarted = true;
-
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-  playBirthdaySong();
-}
-
-/* 🎶 生日快乐旋律（简化但好听） */
 const melody = [
-  [264, 500], [264, 500], [297, 1000], [264, 1000], [352, 1000], [330, 2000],
-  [264, 500], [264, 500], [297, 1000], [264, 1000], [396, 1000], [352, 2000],
-  [264, 500], [264, 500], [528, 1000], [440, 1000], [352, 1000], [330, 1000], [297, 2000],
-  [466, 500], [466, 500], [440, 1000], [352, 1000], [396, 1000], [352, 3000]
+  [262,0.5],[262,0.5],[294,1],[262,1],[349,1],[330,2],
+  [262,0.5],[262,0.5],[294,1],[262,1],[392,1],[349,2],
+  [262,0.5],[262,0.5],[523,1],[440,1],[349,1],[330,1],[294,2],
+  [466,0.5],[466,0.5],[440,1],[349,1],[392,1],[349,2]
 ];
 
-function playBirthdaySong() {
-  let time = audioCtx.currentTime;
+function playBirthdaySong(){
+  if(musicStarted) return;
+  musicStarted=true;
 
-  melody.forEach(([freq, dur]) => {
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  audioCtx.resume(); // 🔑 微信必须
+
+  let time = audioCtx.currentTime;
+  melody.forEach(note=>{
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
 
-    osc.type = "sine";
-    osc.frequency.value = freq;
+    osc.type="sine";
+    osc.frequency.value=note[0];
+    gain.gain.setValueAtTime(0.15,time);
+    gain.gain.exponentialRampToValueAtTime(0.001,time+note[1]);
 
-    gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.exponentialRampToValueAtTime(0.2, time + 0.05);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + dur / 1000);
-
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
+    osc.connect(gain).connect(audioCtx.destination);
     osc.start(time);
-    osc.stop(time + dur / 1000);
+    osc.stop(time+note[1]);
 
-    time += dur / 1000;
+    time+=note[1];
   });
 
-  // ⭐ 自动循环
-  clearTimeout(musicTimer);
-  musicTimer = setTimeout(playBirthdaySong, (time - audioCtx.currentTime) * 1000);
+  // 🔁 循环（节奏不变）
+  setTimeout(()=>{
+    musicStarted=false;
+    playBirthdaySong();
+  }, time*1000);
 }
 
-/* ================== 🔑 微信解锁音频 ================== */
-document.addEventListener("WeixinJSBridgeReady", () => {
-  if (audioCtx && audioCtx.state !== "running") {
-    audioCtx.resume();
-  }
-}, false);
+/* ================== 原有烟花逻辑（未改） ================== */
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+canvas.width=innerWidth;
+canvas.height=innerHeight;
 
-/* ================== 👆 点击开始时初始化 ================== */
-document.getElementById("startScreen").addEventListener("click", () => {
-  initAudio();
-});
+let particles=[],started=false,messageShown=false;
+const COLORS=["#ff9aa2","#ffb7b2","#ffdac1","#e2f0cb","#b5ead7","#c7ceea","#f6c1ff"];
+
+class Particle{
+  constructor(x,y,vx,vy,c,l=1.2,g=0.01){
+    this.x=x;this.y=y;this.vx=vx;this.vy=vy;this.a=l;this.c=c;this.g=g;
+  }
+  update(){this.x+=this.vx;this.y+=this.vy;this.vy+=this.g;this.a-=0.008;}
+  draw(){
+    ctx.globalAlpha=Math.max(this.a,0);
+    ctx.fillStyle=this.c;
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,1.6,0,Math.PI*2);
+    ctx.fill();
+  }
+}
+
+function randomFirework(x,y){
+  x??=Math.random()*canvas.width;
+  y??=Math.random()*canvas.height*0.65;
+  const c=COLORS[Math.floor(Math.random()*COLORS.length)];
+  for(let i=0;i<28;i++){
+    particles.push(new Particle(x,y,(Math.random()-0.5)*4,(Math.random()-0.5)*4,c));
+  }
+}
+
+function animate(){
+  ctx.fillStyle="rgba(0,0,0,0.18)";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.update();p.draw();
+    if(p.a<=0) particles.splice(i,1);
+  }
+  requestAnimationFrame(animate);
+}
+animate();
+
+/* ================== 👆 点击开始（关键） ================== */
+document.getElementById("startScreen").onclick=()=>{
+  document.getElementById("startScreen").style.display="none";
+  started=true;
+
+  playBirthdaySong(); // 🎵 必须在点击里！
+
+  randomFirework(canvas.width/2,canvas.height/2);
+  setInterval(randomFirework,520);
+
+  setTimeout(()=>{
+    const msg=document.getElementById("finalMessage");
+    msg.style.display="block";
+    msg.style.animationPlayState="running";
+    messageShown=true;
+  },7000);
+};
+
+onresize=()=>{
+  canvas.width=innerWidth;
+  canvas.height=innerHeight;
+};
 </script>
 
 </body>
