@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>生日快乐</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+      font-family: Arial, sans-serif;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    /* 点击开始 */
+    #startScreen {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      cursor: pointer;
+      z-index: 5;
+    }
+
+    #startScreen span {
+      color: white;
+      font-size: 1.2em;
+      display: block;
+      margin-top: 10px;
+    }
+
+    /* 倒计时 */
+    #countdown {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      font-size: 3em;
+      z-index: 4;
+      display: none;
+    }
+
+    /* 最终祝福文字 */
+    #finalMessage {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4em;
+      font-weight: bold;
+      background: linear-gradient(
+        90deg,
+        red, orange, yellow, green, cyan, blue, violet
+      );
+      -webkit-background-clip: text;
+      color: transparent;
+      animation: glow 2s infinite;
+      display: none;
+      z-index: 3;
+      white-space: nowrap;
+    }
+
+    @keyframes glow {
+      0%   { filter: drop-shadow(0 0 5px red); }
+      50%  { filter: drop-shadow(0 0 20px yellow); }
+      100% { filter: drop-shadow(0 0 5px red); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 点击开始 -->
+  <div id="startScreen">
+    <img src="https://i.ibb.co/svqzV0c/click.gif" width="120">
+    <span>点这里</span>
+  </div>
+
+  <!-- 倒计时 -->
+  <div id="countdown"></div>
+
+  <!-- 最终祝福 -->
+  <div id="finalMessage">🎉 生日快乐!!! 🎉</div>
+
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // ================= 烟花类 =================
+    class Firework {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        this.radius = 2;
+        this.vx = (Math.random() - 0.5) * 8;
+        this.vy = (Math.random() - 0.5) * 8;
+        this.alpha = 1;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.alpha -= 0.015;
+      }
+
+      draw() {
+        ctx.globalAlpha = this.alpha;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+      }
+    }
+
+    let fireworks = [];
+
+    function createFirework(x, y) {
+      const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+      for (let i = 0; i < 60; i++) {
+        fireworks.push(new Firework(x, y, color));
+      }
+    }
+
+    function randomFirework() {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height * 0.7;
+      createFirework(x, y);
+    }
+
+    // ================= 动画循环 =================
+    function animate() {
+      ctx.fillStyle = "rgba(0,0,0,0.2)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      fireworks.forEach((fw, i) => {
+        fw.update();
+        fw.draw();
+        if (fw.alpha <= 0) fireworks.splice(i, 1);
+      });
+
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // ================= 页面流程 =================
+    const startScreen = document.getElementById("startScreen");
+    const countdownDiv = document.getElementById("countdown");
+    const finalMessage = document.getElementById("finalMessage");
+
+    startScreen.addEventListener("click", () => {
+      startScreen.style.display = "none";
+
+      let count = 3;
+      countdownDiv.style.display = "block";
+      countdownDiv.innerText = count;
+
+      // 倒计时预热烟花
+      let preFire = setInterval(() => {
+        createFirework(
+          Math.random() * canvas.width,
+          canvas.height * 0.6
+        );
+      }, 500);
+
+      let timer = setInterval(() => {
+        count--;
+        countdownDiv.innerText = count;
+
+        if (count === 0) {
+          clearInterval(timer);
+          clearInterval(preFire);
+          countdownDiv.style.display = "none";
+
+          // 主烟花（持续）
+          setInterval(randomFirework, 300);
+
+          // 10秒后显示祝福文字（烟花不停）
+          setTimeout(() => {
+            finalMessage.style.display = "block";
+          }, 10000);
+        }
+      }, 1000);
+    });
+
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+
+</body>
+</html>
