@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>生日快乐 - 修复并保留7秒等待版</title>
+<title>生日快乐</title>
 
 <style>
 body{
@@ -69,9 +69,8 @@ const NAME="绚丽";
 const MAX_PARTICLES=2400;
 const COLORS=["#ff9aa2","#ffb7b2","#ffdac1","#b5ead7","#c7ceea","#f6c1ff"];
 
-/* ================= 音乐（已修复！保留 7 秒等待功能） ================= */
+/* ================= 音乐（已修复） ================= */
 const audio=new Audio(
-  // ⭐ 优化：使用可用的公共生日歌链接，取代失效的原链接
   "https://dl.dropboxusercontent.com/s/z9j39q493f2f0yq/happy_birthday.mp3?dl=0"
 );
 audio.loop=true;
@@ -84,7 +83,7 @@ canvas.height=innerHeight;
 
 let particles=[];
 let started=false;
-let messageShown=false; // <-- 必须保留此变量，它控制 7 秒等待
+let messageShown=false;
 
 /* ================= 粒子 ================= */
 class Particle{
@@ -163,12 +162,31 @@ function heartWithName(cx,cy){
   }
 }
 
-/* 🎂 蛋糕 */
+/* 🎂 蛋糕 (已优化形状！) */
 function cakeFirework(cx,cy){
-  for(let l=0;l<3;l++){
-    for(let x=-28;x<=28;x+=4){
-      particles.push(new Particle(cx+x,cy-l*14,0,-1.2,"#ffdac1",1.2,0));
-    }
+  // 底部蛋糕体 (最宽)
+  for(let x=-32;x<=32;x+=4){
+    particles.push(new Particle(cx+x,cy,0,-1.2,"#ffdac1",1.2,0));
+  }
+  // 中间层 (稍窄)
+  for(let x=-24;x<=24;x+=4){
+    particles.push(new Particle(cx+x,cy-16,0,-1.2,"#ffb7b2",1.2,0));
+  }
+  // 顶部奶油层 (最窄)
+  for(let x=-16;x<=16;x+=4){
+    particles.push(new Particle(cx+x,cy-32,0,-1.2,"#ffe3ec",1.2,0));
+  }
+  // 蜡烛/火焰 (向上飘的粒子)
+  for(let i=0;i<10;i++){
+    particles.push(new Particle(
+      cx+(Math.random()-0.5)*10, // 位置在顶部中间
+      cy-40,
+      (Math.random()-0.5)*0.5,
+      -1.5, // 向上飘
+      i%2===0 ? "#ff9a00" : "#ffcc00", // 火焰颜色
+      1.5,
+      0.01 // 轻微重力
+    ));
   }
 }
 
@@ -185,42 +203,40 @@ function animate(){
 }
 animate();
 
-/* ================= 启动（修复音乐） ================= */
+/* ================= 启动（修复音乐，保留 7 秒等待） ================= */
 document.getElementById("startScreen").onclick=()=>{
   document.getElementById("startScreen").style.display="none";
   started=true;
 
-  audio.play().catch(()=>{
-    console.error("音乐播放失败，可能被浏览器阻止。");
-  }); // 音乐应该在此处成功播放
+  audio.play().catch(()=>{}); 
 
   randomFirework(canvas.width/2,canvas.height/2);
   setInterval(randomFirework,520);
 
-  // ⭐ 7 秒等待逻辑：此处的代码保留不动！
+  // 7 秒等待逻辑：保留
   setTimeout(()=>{
     const msg=document.getElementById("finalMessage");
     msg.style.display="block";
     msg.style.animationPlayState="running";
-    messageShown=true; // 7 秒后设为 true，解锁单击/双击
+    messageShown=true; 
   },7000);
 };
 
-/* ================= 稳定单双击（保留 7 秒等待逻辑） ================= */
+/* ================= 稳定单双击（提高双击识别率，保留 7 秒等待） ================= */
 let clickTimer=null;
 canvas.addEventListener("click",e=>{
-  // ⭐ 保留此检查！必须 started 和 messageShown 都为 true 才能执行
+  // ⭐ 保留 7 秒检查
   if(!started||!messageShown) return; 
 
   if(clickTimer){
     clearTimeout(clickTimer);
     clickTimer=null;
-    cakeFirework(e.clientX,e.clientY);
+    cakeFirework(e.clientX,e.clientY); // 双击：蛋糕 (已优化)
   }else{
     clickTimer=setTimeout(()=>{
-      heartWithName(e.clientX,e.clientY);
+      heartWithName(e.clientX,e.clientY); // 单击：心形
       clickTimer=null;
-    },260);
+    },350); // ⭐ 将 260ms 提高到 350ms，提高双击识别率
   }
 });
 
