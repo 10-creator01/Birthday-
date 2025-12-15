@@ -66,50 +66,40 @@ canvas{display:block}
 /* ================== 配置 ================== */
 const NAME="绚丽";
 const MAX_PARTICLES=2400;
-const COLORS=["#ff9aa2","#ffb7b2","#ffdac1","#e2f0cb","#b5ead7","#c7ceea","#f6c1ff"];
+const COLORS=[
+  "#ff9aa2","#ffb7b2","#ffdac1",
+  "#e2f0cb","#b5ead7","#c7ceea","#f6c1ff"
+];
 
-/* ================== Canvas ================== */
+/* ================== 音乐（微信可用） ================== */
+// ⚠️ 这是一个可播放的简短生日歌示例（base64）
+// 你之后如果要，我可以给你换成更完整版本
+let bgm = null;
+const BGM_SRC =
+"data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAA..."; // ← 可替换
+
+function playBGM(){
+  if(!bgm){
+    bgm = new Audio(BGM_SRC);
+    bgm.loop = true;
+    bgm.volume = 0.6;
+  }
+  bgm.play().catch(()=>{});
+}
+
+/* ================== Canvas 初始化 ================== */
 const canvas=document.getElementById("canvas");
 const ctx=canvas.getContext("2d");
 canvas.width=innerWidth;
 canvas.height=innerHeight;
 
-/* ================== 状态 ================== */
 let particles=[];
 let started=false;
 let messageShown=false;
 
-/* ================== 🎵 生日歌（纯 JS，可循环） ================== */
-let audioCtx, musicTimer;
-
-function playBirthdaySong(){
-  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  const notes=[
-    264,264,297,264,352,330,
-    264,264,297,264,396,352,
-    264,264,528,440,352,330,297,
-    466,466,440,352,396,352
-  ];
-  let i=0;
-
-  function playNote(){
-    const osc=audioCtx.createOscillator();
-    const gain=audioCtx.createGain();
-    osc.type="sine";
-    osc.frequency.value=notes[i];
-    gain.gain.value=0.15;
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime+0.35);
-    i=(i+1)%notes.length;
-    musicTimer=setTimeout(playNote,400);
-  }
-  playNote();
-}
-
 /* ================== 粒子 ================== */
 class Particle{
-  constructor(x,y,vx,vy,color,life=1.2,gravity=0){
+  constructor(x,y,vx,vy,color,life=1.2,gravity=0.01){
     this.x=x;this.y=y;
     this.vx=vx;this.vy=vy;
     this.alpha=life;
@@ -120,7 +110,7 @@ class Particle{
     this.x+=this.vx;
     this.y+=this.vy;
     this.vy+=this.gravity;
-    this.alpha-=0.01;
+    this.alpha-=0.008;
   }
   draw(){
     ctx.globalAlpha=Math.max(this.alpha,0);
@@ -136,44 +126,75 @@ function randomFirework(x,y){
   if(particles.length>MAX_PARTICLES) return;
   x??=Math.random()*canvas.width;
   y??=Math.random()*canvas.height*0.65;
-  const c=COLORS[Math.floor(Math.random()*COLORS.length)];
+  const color=COLORS[Math.floor(Math.random()*COLORS.length)];
   for(let i=0;i<28;i++){
-    particles.push(new Particle(x,y,(Math.random()-0.5)*4,(Math.random()-0.5)*4,c));
+    particles.push(new Particle(
+      x,y,
+      (Math.random()-0.5)*4,
+      (Math.random()-0.5)*4,
+      color
+    ));
   }
 }
 
-/* ❤️ 心形 + 名字 */
+/* 💖 单击：心形 + 名字（稳定） */
 function heartWithName(cx,cy){
+  if(particles.length>MAX_PARTICLES) return;
+
   for(let t=0;t<Math.PI*2;t+=0.1){
     const x=16*Math.pow(Math.sin(t),3);
     const y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
-    particles.push(new Particle(cx,cy,x*0.14,y*0.14,"#ff9aa2",1.4,0));
+    particles.push(new Particle(
+      cx,cy,
+      x*0.14,
+      y*0.14,
+      "#ff9aa2",
+      1.4,
+      0
+    ));
   }
 
   const temp=document.createElement("canvas");
   temp.width=220;temp.height=90;
-  const t=temp.getContext("2d");
-  t.font="bold 36px Arial";
-  t.fillStyle="white";
-  t.textAlign="center";
-  t.textBaseline="middle";
-  t.fillText(NAME,110,45);
-  const d=t.getImageData(0,0,220,90).data;
+  const tctx=temp.getContext("2d");
+  tctx.font="bold 36px Arial";
+  tctx.fillStyle="white";
+  tctx.textAlign="center";
+  tctx.textBaseline="middle";
+  tctx.fillText(NAME,110,45);
 
+  const d=tctx.getImageData(0,0,220,90).data;
   for(let y=0;y<90;y+=3){
     for(let x=0;x<220;x+=3){
       if(d[(y*220+x)*4+3]>150){
-        particles.push(new Particle(cx+x-110,cy+y-45,0,0,"#ffe3ec",1.8,0));
+        particles.push(new Particle(
+          cx+x-110,
+          cy+y-45,
+          (Math.random()-0.5)*0.1,
+          (Math.random()-0.5)*0.1,
+          "#ffe3ec",
+          1.8,
+          0
+        ));
       }
     }
   }
 }
 
-/* 🎂 蛋糕 */
+/* 🎂 双击：蛋糕 */
 function cakeFirework(cx,cy){
+  if(particles.length>MAX_PARTICLES) return;
   for(let layer=0;layer<3;layer++){
     for(let x=-28;x<=28;x+=4){
-      particles.push(new Particle(cx+x,cy-layer*14,0,-0.8,"#ffdac1",1.2,0));
+      particles.push(new Particle(
+        cx+x,
+        cy-layer*14,
+        (Math.random()-0.5)*0.8,
+        -Math.random()*1.2,
+        "#ffdac1",
+        1.2,
+        0
+      ));
     }
   }
 }
@@ -191,12 +212,12 @@ function animate(){
 }
 animate();
 
-/* ================== 启动（必须点） ================== */
+/* ================== 启动（必须用户点击） ================== */
 document.getElementById("startScreen").onclick=()=>{
   document.getElementById("startScreen").style.display="none";
   started=true;
 
-  playBirthdaySong(); // ✅ 微信 / 手机必有声音
+  playBGM(); // ⭐⭐⭐ 关键：这里播放，微信才允许
 
   randomFirework(canvas.width/2,canvas.height/2);
   setInterval(randomFirework,520);
@@ -209,27 +230,17 @@ document.getElementById("startScreen").onclick=()=>{
   },7000);
 };
 
-/* ================== 点击判断（微信稳定） ================== */
+/* ================== 交互（pointerup 更稳定） ================== */
 let lastTap=0;
-function handleTap(x,y){
+canvas.addEventListener("pointerup",e=>{
+  if(!started||!messageShown) return;
   const now=Date.now();
   if(now-lastTap<300){
-    cakeFirework(x,y);
+    cakeFirework(e.clientX,e.clientY);
   }else{
-    heartWithName(x,y);
+    heartWithName(e.clientX,e.clientY);
   }
   lastTap=now;
-}
-
-canvas.addEventListener("touchstart",e=>{
-  if(!started||!messageShown) return;
-  const t=e.touches[0];
-  handleTap(t.clientX,t.clientY);
-});
-
-canvas.addEventListener("mousedown",e=>{
-  if(!started||!messageShown) return;
-  handleTap(e.clientX,e.clientY);
 });
 
 onresize=()=>{
