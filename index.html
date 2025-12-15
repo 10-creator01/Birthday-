@@ -2,12 +2,13 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<title>生日快乐</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> <title>生日快乐！</title>
 <style>
   body {
     margin: 0;
     overflow: hidden;
     background: black;
+    touch-action: manipulation; /* 🌟 优化：移动端交互 */
   }
   canvas { display: block; }
 
@@ -20,32 +21,42 @@
     cursor: pointer;
     z-index: 5;
     animation: bounce 1s infinite alternate;
+    color: white;
+    text-shadow: 0 0 10px hotpink;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.5); 
+    border-radius: 10px;
+    text-align: center;
   }
   #startScreen span {
     display: block;
     font-size: 0.35em;
     color: white;
     text-align: center;
+    margin-top: 10px;
   }
   @keyframes bounce {
     from { transform: translate(-50%, -50%) scale(1); }
-    to   { transform: translate(-50%, -60%) scale(1.2); }
+    to   { transform: translate(-50%, -60%) scale(1.1); } 
   }
 
   #finalMessage {
     position: absolute;
-    top: 42%;
+    top: 50%; 
     left: 50%;
     transform: translate(-50%, -50%);
     font-size: 4em;
     font-weight: bold;
-    background: linear-gradient(90deg, pink, hotpink, red);
+    background: linear-gradient(90deg, #ffc0cb, #ff69b4, #ff4500);
     -webkit-background-clip: text;
     color: transparent;
     animation: glow 2s infinite;
     display: none;
     z-index: 3;
     pointer-events: none;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    padding: 10px 20px;
+    white-space: nowrap; /* 确保不换行 */
   }
 
   @keyframes glow {
@@ -57,25 +68,39 @@
 </head>
 <body>
 
-<div id="startScreen">👆<span></span></div>
-<div id="finalMessage">🎉 生日快乐！！！ 🎉</div>
+<div id="startScreen">👆 点击这里开始 🎉<span></span></div>
+<div id="finalMessage"></div>
 <canvas id="canvas"></canvas>
 
 <script>
-const NAME = "绚丽"; // ⭐ 改这里，保持在顶部方便修改
+// =======================================================
+// ⭐ 核心设置：寿星的名字
+// =======================================================
+const NAME = "绚丽"; 
 
+// =======================================================
+// 初始化和Canvas设置
+// =======================================================
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const startScreen = document.getElementById("startScreen");
 const finalMessage = document.getElementById("finalMessage");
 
-// 优化：初始化动态内容
+// 初始化动态内容
 startScreen.querySelector("span").innerText = `点击任意处，欣赏为你准备的生日烟花`;
 finalMessage.innerText = `🎉 生日快乐，${NAME}！ 🎉`;
 
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
+// 状态变量
+let particles = [];
+let started = false;
+let messageShown = false;
+
+// =======================================================
+// 粒子 (Particle) 类
+// =======================================================
 class Particle {
   constructor(x, y, vx, vy, color) {
     this.x = x;
@@ -89,7 +114,7 @@ class Particle {
     this.x += this.vx;
     this.y += this.vy;
     this.alpha -= 0.015;
-    this.vy += 0.02; // 重力效果
+    this.vy += 0.02; // 增加重力效果，粒子下落
   }
   draw() {
     ctx.globalAlpha = this.alpha;
@@ -101,9 +126,9 @@ class Particle {
   }
 }
 
-let particles = [];
-let started = false;
-let messageShown = false;
+// =======================================================
+// 烟花效果函数
+// =======================================================
 
 /* 普通烟花 */
 function randomFirework(x, y) {
@@ -120,7 +145,7 @@ function randomFirework(x, y) {
   }
 }
 
-/* 💖 心形 + 名字（一起） */
+/* 💖 心形 + 名字（跟随点击位置动态出现） */
 function heartWithName(cx, cy) {
   const heartColor = "hotpink";
   const nameColor = "pink";
@@ -140,7 +165,7 @@ function heartWithName(cx, cy) {
     ));
   }
 
-  // —— 名字粒子（用 canvas 取点） ——
+  // 名字粒子（使用临时 canvas 获取文本形状）
   const temp = document.createElement("canvas");
   const tctx = temp.getContext("2d");
   temp.width = 300;
@@ -158,8 +183,8 @@ function heartWithName(cx, cy) {
     for (let x = 0; x < temp.width; x += 4) {
       if (img[(y * temp.width + x) * 4 + 3] > 150) { 
         particles.push(new Particle(
-          cx + x - 150, 
-          cy + y - 60,
+          cx + x - 150, // 确保名字中心点在 cx
+          cy + y - 60,  // 确保名字中心点在 cy
           (Math.random() - 0.5) * 1.5,
           (Math.random() - 0.5) * 1.5,
           nameColor
@@ -169,8 +194,11 @@ function heartWithName(cx, cy) {
   }
 }
 
-/* 动画循环 */
+// =======================================================
+// 动画循环
+// =======================================================
 function animate() {
+  // 🌟 残影效果：每次绘制都用半透明黑块覆盖，形成粒子拖尾
   ctx.fillStyle = "rgba(0,0,0,0.1)"; 
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   
@@ -183,101 +211,90 @@ function animate() {
 }
 animate();
 
-/* 启动 */
+// =======================================================
+// 启动逻辑
+// =======================================================
 document.getElementById("startScreen").onclick = () => {
   document.getElementById("startScreen").style.display = "none";
   started = true;
   randomFirework(canvas.width/2, canvas.height/2);
+  // 每隔 350ms 自动随机发射一个烟花
   setInterval(randomFirework, 350); 
   
+  // 8秒后显示最终祝福语
   setTimeout(() => {
     finalMessage.style.display = "block";
     messageShown = true;
   }, 8000);
 };
 
-// --- 🌟 优化后的交互逻辑 (分离 PC 和 Mobile) ---
-
+// =======================================================
+// 🌟 交互逻辑 (支持 PC 鼠标 和 移动端触摸/长按/双击)
+// =======================================================
 let pressTimer = null;
-let lastTapTime = 0; // 用于双击识别
-const TAP_THRESHOLD = 300; // 双击判定时间（毫秒）
-const LONG_PRESS_THRESHOLD = 500; // 长按判定时间（毫秒）
+let lastTapTime = 0; 
+let lastClickPos = {x: 0, y: 0}; // 记录最后一次点击位置
+const TAP_THRESHOLD = 300; 
+const LONG_PRESS_THRESHOLD = 500; 
 
-// 核心处理函数
+// 核心处理函数：区分单击/双击/长按
 function handleInteraction(clientX, clientY, isTouch) {
     if (!started || !messageShown) return;
 
     const now = Date.now();
+    lastClickPos = {x: clientX, y: clientY};
 
     // 1. 双击 (触发心形+名字)
     if (now - lastTapTime < TAP_THRESHOLD) {
-      if (pressTimer) clearTimeout(pressTimer); // 取消任何可能的单击/长按
+      if (pressTimer) clearTimeout(pressTimer); 
       pressTimer = null;
-      lastTapTime = 0; // 重置
+      lastTapTime = 0; 
       heartWithName(clientX, clientY);
-      return true; // 已处理
+      return; 
     }
 
     lastTapTime = now;
     
-    // 2. 长按 / 单击 (使用计时器来区分)
+    // 2. 长按 / 单击 计时器
     pressTimer = setTimeout(() => {
-        // 如果计时器运行到期，说明是长按
+        // 计时器运行到期，视为长按
         heartWithName(clientX, clientY);
         pressTimer = null;
     }, LONG_PRESS_THRESHOLD);
-
-    return false; // 等待释放或计时器到期
 }
 
-// ----------------------------------------------------
-// A. 桌面端 (Mouse) 交互
-// ----------------------------------------------------
-document.addEventListener("mousedown", e => {
+// 释放处理函数：用于识别单击
+function handleRelease() {
     if (!started || !messageShown) return;
-    // 鼠标事件进入核心处理逻辑
-    handleInteraction(e.clientX, e.clientY, false);
-});
-
-document.addEventListener("mouseup", e => {
-    if (!started || !messageShown) return;
-    // 如果在长按阈值前释放 (即pressTimer仍然存在)，则认为是单击
+    
     if (pressTimer) {
         clearTimeout(pressTimer);
-        // 如果不是双击，则触发单击
-        if (Date.now() - lastTapTime < TAP_THRESHOLD) {
-             randomFirework(e.clientX, e.clientY);
+        // 如果 pressTimer 被清除，且在双击时间外 (双击逻辑已优先处理)
+        // 且按下时间小于长按阈值，则视为单击
+        if (Date.now() - lastTapTime < LONG_PRESS_THRESHOLD) {
+             randomFirework(lastClickPos.x, lastClickPos.y); 
         }
         pressTimer = null;
     }
+}
+
+
+// --- A. 桌面端 (Mouse) 交互 ---
+document.addEventListener("mousedown", e => {
+    handleInteraction(e.clientX, e.clientY, false);
 });
+document.addEventListener("mouseup", handleRelease);
 
 
-// ----------------------------------------------------
-// B. 移动端 (Touch) 交互
-// ----------------------------------------------------
+// --- B. 移动端 (Touch) 交互 ---
 document.addEventListener("touchstart", e => {
     if (!started || !messageShown) return;
     e.preventDefault(); // 阻止默认的缩放或上下文菜单
     const touch = e.touches[0];
-    // 触摸事件进入核心处理逻辑
     handleInteraction(touch.clientX, touch.clientY, true);
 }, { passive: false });
+document.addEventListener("touchend", handleRelease);
 
-document.addEventListener("touchend", e => {
-    if (!started || !messageShown) return;
-    // 如果在长按阈值前释放 (即pressTimer仍然存在)，则认为是单击
-    if (pressTimer) {
-        clearTimeout(pressTimer);
-        // 如果不是双击，则触发单击
-        if (Date.now() - lastTapTime < TAP_THRESHOLD) {
-             // 注意：这里需要使用最后一次触摸的位置，但为了简化，直接调用随机烟花
-             // 更好的做法是在 touchstart 时记录位置
-             randomFirework(); 
-        }
-        pressTimer = null;
-    }
-});
 
 // 窗口大小变化时重设 Canvas
 onresize = () => {
@@ -285,7 +302,6 @@ onresize = () => {
   canvas.height = innerHeight;
 };
 </script>
-
 
 </body>
 </html>
