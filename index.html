@@ -15,7 +15,7 @@ body{
 }
 canvas{display:block}
 
-/* 开始手势 */
+
 #startScreen{
   position:absolute;
   top:50%;left:50%;
@@ -151,7 +151,7 @@ function randomFirework(x,y){
   }
 }
 
-/* 💖 心 + 名字 */
+/* 💖 心 */
 function heartWithName(cx,cy){
   for(let t=0;t<Math.PI*2;t+=0.1){
     const x=16*Math.sin(t)**3;
@@ -186,7 +186,7 @@ function heartWithName(cx,cy){
   }
 }
 
-/* 🎂 最终优化蛋糕 */
+/* 🎂 蛋糕 */
 function cakeFirework(cx, cy){
   let layerHeight = 20;
   let bottomWidth = 80, middleWidth = 60, topWidth = 40;
@@ -251,7 +251,7 @@ document.getElementById("startScreen").onclick = ()=>{
   document.getElementById("startScreen").style.display="none";
   started=true;
   isPlaying = true;
-  playMelody(); // 🎵 点击后立即播放音乐
+  playMelody(); // 🎵 
 
   randomFirework(canvas.width/2,canvas.height/2);
   setInterval(randomFirework,520);
