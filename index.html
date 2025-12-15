@@ -2,8 +2,7 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>生日快乐</title>
 
 <style>
@@ -13,11 +12,11 @@ body{
   background:black;
   touch-action:none;
   user-select:none;
-  font-family:"PingFang SC",Arial,sans-serif;
+  font-family: "PingFang SC", Arial, sans-serif;
 }
 canvas{display:block}
 
-/* 开始提示 */
+/* 👉 开始提示（手势放大） */
 #startScreen{
   position:absolute;
   top:50%;left:50%;
@@ -30,34 +29,30 @@ canvas{display:block}
   animation:bounce 1.2s infinite alternate;
   text-shadow:0 0 14px hotpink;
 }
-#startScreen span{
-  display:block;
-  font-size:.9rem;
-  margin-top:10px;
-}
 @keyframes bounce{
   from{transform:translate(-50%,-50%) scale(1)}
   to{transform:translate(-50%,-60%) scale(1.08)}
 }
 
-/* 生日快乐（渐显） */
+/* 🎉 生日快乐 —— 渐变浮现 */
 #finalMessage{
   position:absolute;
   top:48%;left:50%;
   transform:translate(-50%,-40%);
-  font-size:2rem;
+  font-size:2.4em;
   font-weight:600;
   background:linear-gradient(90deg,#ffb7b2,#ff9aa2,#f6c1ff);
   -webkit-background-clip:text;
   color:transparent;
   opacity:0;
-  animation:fadeRise 3s ease-out forwards,
-           glowBreath 3s ease-in-out infinite;
+  animation: fadeRise 3s ease-out forwards,
+             glowBreath 3s ease-in-out infinite;
   display:none;
   z-index:3;
   white-space:nowrap;
   pointer-events:none;
 }
+
 @keyframes fadeRise{
   from{opacity:0;transform:translate(-50%,-20%)}
   to{opacity:1;transform:translate(-50%,-40%)}
@@ -72,123 +67,168 @@ canvas{display:block}
 
 <body>
 
-<div id="startScreen">👆<span></span></div>
+<div id="startScreen">👆</div>
 <div id="finalMessage">🎉 生日快乐 🎉</div>
 <canvas id="canvas"></canvas>
 
 <script>
-/* ================= 配置 ================= */
+/* ================== 配置 ================== */
 const NAME="绚丽";
-const MAX_PARTICLES=2400;
-const COLORS=["#ff9aa2","#ffb7b2","#ffdac1","#b5ead7","#c7ceea","#f6c1ff"];
+const MAX_PARTICLES=2600;
+const COLORS=["#ff9aa2","#ffb7b2","#ffdac1","#e2f0cb","#b5ead7","#c7ceea","#f6c1ff"];
 
-/* ================= Canvas ================= */
+/* ================== Canvas ================== */
 const canvas=document.getElementById("canvas");
 const ctx=canvas.getContext("2d");
 canvas.width=innerWidth;
 canvas.height=innerHeight;
 
-let particles=[],started=false,messageShown=false;
+let particles=[];
+let started=false;
+let messageShown=false;
 
-/* ================= 音乐（内嵌） ================= */
-const audio=new Audio(
-"data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAA..."
-); // （已省略显示，不影响实际运行）
-audio.loop=true;
-audio.volume=0.7;
-
-/* ================= 粒子 ================= */
+/* ================== 粒子 ================== */
 class Particle{
-  constructor(x,y,vx,vy,color,life=1,gravity=0.01){
-    this.x=x;this.y=y;this.vx=vx;this.vy=vy;
-    this.alpha=life;this.color=color;this.gravity=gravity;
+  constructor(x,y,vx,vy,color,life=1,gravity=0.015){
+    this.x=x;this.y=y;
+    this.vx=vx;this.vy=vy;
+    this.alpha=life;
+    this.color=color;
+    this.gravity=gravity;
   }
   update(){
-    this.x+=this.vx;this.y+=this.vy;
-    this.vy+=this.gravity;this.alpha-=0.01;
+    this.x+=this.vx;
+    this.y+=this.vy;
+    this.vy+=this.gravity;
+    this.alpha-=0.012;
   }
   draw(){
     ctx.globalAlpha=Math.max(this.alpha,0);
     ctx.fillStyle=this.color;
     ctx.beginPath();
-    ctx.arc(this.x,this.y,1.6,0,Math.PI*2);
+    ctx.arc(this.x,this.y,1.8,0,Math.PI*2);
     ctx.fill();
   }
 }
 
-/* ================= 烟花 ================= */
+/* ================== 烟花 ================== */
 function randomFirework(x,y){
   if(particles.length>MAX_PARTICLES) return;
   x??=Math.random()*canvas.width;
   y??=Math.random()*canvas.height*0.65;
   const color=COLORS[Math.floor(Math.random()*COLORS.length)];
-  for(let i=0;i<28;i++){
+  for(let i=0;i<36;i++){
     particles.push(new Particle(
-      x,y,(Math.random()-0.5)*4,(Math.random()-0.5)*4,color
+      x,y,
+      (Math.random()-0.5)*5,
+      (Math.random()-0.5)*5,
+      color
     ));
   }
 }
 
-/* 💖 心形 + 名字 */
+/* 💖 单击：心形 + 名字 */
 function heartWithName(cx,cy){
-  for(let t=0;t<Math.PI*2;t+=0.1){
+  for(let t=0;t<Math.PI*2;t+=0.09){
     const x=16*Math.pow(Math.sin(t),3);
     const y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
-    particles.push(new Particle(cx,cy,x*0.14,y*0.14,"#ff9aa2",1,0));
+    particles.push(new Particle(cx,cy,x*0.16,y*0.16,"#ff9aa2",1,0.008));
   }
-}
 
-/* 🎂 蛋糕烟花 */
-function cakeFirework(cx,cy){
-  for(let y=0;y<3;y++){
-    for(let x=-25;x<=25;x+=4){
-      particles.push(new Particle(cx+x,cy-y*12,0,-0.5,"#ffe3ec",1.4,0));
+  const temp=document.createElement("canvas");
+  temp.width=260;temp.height=100;
+  const tctx=temp.getContext("2d");
+  tctx.font="bold 42px Arial";
+  tctx.fillStyle="white";
+  tctx.textAlign="center";
+  tctx.textBaseline="middle";
+  tctx.fillText(NAME,130,50);
+
+  const d=tctx.getImageData(0,0,260,100).data;
+  for(let y=0;y<100;y+=3){
+    for(let x=0;x<260;x+=3){
+      if(d[(y*260+x)*4+3]>150){
+        particles.push(new Particle(
+          cx+x-130,cy+y-50,
+          (Math.random()-0.5)*0.15,
+          (Math.random()-0.5)*0.15,
+          "#ffe3ec",1.6,0
+        ));
+      }
     }
   }
 }
 
-/* ================= 动画 ================= */
+/* ================== 动画 ================== */
 function animate(){
-  ctx.fillStyle="rgba(0,0,0,0.16)";
+  ctx.fillStyle="rgba(0,0,0,0.14)";
   ctx.fillRect(0,0,canvas.width,canvas.height);
   for(let i=particles.length-1;i>=0;i--){
-    particles[i].update();
-    particles[i].draw();
-    if(particles[i].alpha<=0) particles.splice(i,1);
+    const p=particles[i];
+    p.update();p.draw();
+    if(p.alpha<=0) particles.splice(i,1);
   }
   requestAnimationFrame(animate);
 }
 animate();
 
-/* ================= 启动（必须用户点击） ================= */
+/* ================== 🎵 生日快乐歌（Web Audio） ================== */
+let audioCtx;
+function playBirthdaySong(){
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+
+  const notes=[
+    [262,400],[262,400],[294,800],[262,800],[349,800],[330,1600],
+    [262,400],[262,400],[294,800],[262,800],[392,800],[349,1600],
+    [262,400],[262,400],[523,800],[440,800],[349,800],[330,800],[294,1600],
+    [466,400],[466,400],[440,800],[349,800],[392,800],[349,1600]
+  ];
+
+  let t=audioCtx.currentTime;
+  notes.forEach(n=>{
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+    osc.type="sine";
+    osc.frequency.value=n[0];
+    gain.gain.setValueAtTime(0.15,t);
+    gain.gain.exponentialRampToValueAtTime(0.001,t+n[1]/1000);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t);
+    osc.stop(t+n[1]/1000);
+    t+=n[1]/1000;
+  });
+}
+
+/* ================== 启动 ================== */
 document.getElementById("startScreen").onclick=()=>{
   document.getElementById("startScreen").style.display="none";
-  audio.play();           // ✅ 手机允许播放
   started=true;
-  setInterval(randomFirework,450);
+  playBirthdaySong();              // 🎵 播放生日歌
+  randomFirework(canvas.width/2,canvas.height/2);
+  setInterval(randomFirework,420);
   setTimeout(()=>{
-    finalMessage.style.display="block";
+    document.getElementById("finalMessage").style.display="block";
     messageShown=true;
   },8000);
 };
 
-/* ================= 单击 / 双击（稳定版） ================= */
-let clickTimer=null;
+/* ================== 交互 ================== */
+let lastTap=0;
 canvas.addEventListener("pointerdown",e=>{
   if(!started||!messageShown) return;
-  if(clickTimer){
-    clearTimeout(clickTimer);
-    clickTimer=null;
-    cakeFirework(e.clientX,e.clientY); // 双击
+  const now=Date.now();
+  if(now-lastTap<300){
+    randomFirework(e.clientX,e.clientY);
   }else{
-    clickTimer=setTimeout(()=>{
-      heartWithName(e.clientX,e.clientY); // 单击
-      clickTimer=null;
-    },260);
+    heartWithName(e.clientX,e.clientY);
   }
+  lastTap=now;
 });
 
-onresize=()=>{canvas.width=innerWidth;canvas.height=innerHeight};
+onresize=()=>{
+  canvas.width=innerWidth;
+  canvas.height=innerHeight;
+};
 </script>
 
 </body>
