@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>生日快乐 - 最终稳定版</title>
+<title>生日快乐 - 最终精细优化版</title>
 
 <style>
 body{
@@ -71,7 +71,6 @@ const COLORS=["#ff9aa2","#ffb7b2","#ffdac1","#b5ead7","#c7ceea","#f6c1ff"];
 
 /* ================= 音乐（已修复） ================= */
 const audio=new Audio(
-  // 修复了之前失效的链接
   "https://dl.dropboxusercontent.com/s/z9j39q493f2f0yq/happy_birthday.mp3?dl=0"
 );
 audio.loop=true;
@@ -163,31 +162,72 @@ function heartWithName(cx,cy){
   }
 }
 
-/* 🎂 蛋糕 (已优化形状！) */
+/* 🎂 蛋糕 (最终优化形状！) */
 function cakeFirework(cx,cy){
-  // 底部蛋糕体 (最宽)
-  for(let x=-32;x<=32;x+=4){
-    particles.push(new Particle(cx+x,cy,0,-1.2,"#ffdac1",1.2,0));
+  let layerHeight = 18;
+  let topY = cy - 3 * layerHeight;
+
+  // --- 1. 底部蛋糕层 (最宽, 颜色深) ---
+  for(let x = -40; x <= 40; x += 3){
+    for(let i = 0; i < 2; i++){
+      particles.push(new Particle(
+        cx + x + (Math.random() - 0.5) * 6, 
+        cy + (Math.random() * 4), 
+        (Math.random() - 0.5) * 0.1,
+        -1.0, 
+        "#ff9aa2", // 深粉色
+        1.5, 
+        0.01
+      ));
+    }
   }
-  // 中间层 (稍窄)
-  for(let x=-24;x<=24;x+=4){
-    particles.push(new Particle(cx+x,cy-16,0,-1.2,"#ffb7b2",1.2,0));
+
+  // --- 2. 中间奶油层 (中等宽度, 颜色亮) ---
+  for(let x = -30; x <= 30; x += 3){
+    for(let i = 0; i < 2; i++){
+      particles.push(new Particle(
+        cx + x + (Math.random() - 0.5) * 6, 
+        cy - layerHeight + (Math.random() * 4), 
+        (Math.random() - 0.5) * 0.1,
+        -1.0, 
+        "#ffdac1", // 奶油色
+        1.5, 
+        0.01
+      ));
+    }
   }
-  // 顶部奶油层 (最窄)
-  for(let x=-16;x<=16;x+=4){
-    particles.push(new Particle(cx+x,cy-32,0,-1.2,"#ffe3ec",1.2,0));
+
+  // --- 3. 顶部奶油层 (最窄, 颜色最亮) ---
+  for(let x = -20; x <= 20; x += 3){
+    for(let i = 0; i < 2; i++){
+      particles.push(new Particle(
+        cx + x + (Math.random() - 0.5) * 6, 
+        cy - 2 * layerHeight + (Math.random() * 4), 
+        (Math.random() - 0.5) * 0.1,
+        -1.0, 
+        "#ffe3ec", // 亮白色
+        1.5, 
+        0.01
+      ));
+    }
   }
-  // 蜡烛/火焰 (向上飘的粒子)
-  for(let i=0;i<10;i++){
-    particles.push(new Particle(
-      cx+(Math.random()-0.5)*10, // 位置在顶部中间
-      cy-40,
-      (Math.random()-0.5)*0.5,
-      -1.5, // 向上飘
-      i%2===0 ? "#ff9a00" : "#ffcc00", // 火焰颜色
-      1.5,
-      0.01 
-    ));
+
+  // --- 4. 蜡烛/火焰 (5 根蜡烛) ---
+  let candleCount = 5; 
+  for(let c = 0; c < candleCount; c++){
+    let candleX = cx - 15 + c * (30 / (candleCount - 1));
+    
+    for(let i = 0; i < 15; i++){
+      particles.push(new Particle(
+        candleX + (Math.random() - 0.5) * 3, 
+        topY,
+        (Math.random() - 0.5) * 0.5,
+        -2.0, 
+        i % 2 === 0 ? "#ff9a00" : "#ffcc00", // 火焰颜色
+        1.5,
+        0.01
+      ));
+    }
   }
 }
 
