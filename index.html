@@ -2,9 +2,8 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>生日快乐</title>
-
 <style>
 body{
   margin:0;
@@ -56,7 +55,6 @@ canvas{display:block}
 }
 </style>
 </head>
-
 <body>
 
 <div id="startScreen">👆</div>
@@ -69,11 +67,41 @@ const NAME="绚丽";
 const MAX_PARTICLES=2400;
 const COLORS=["#ff9aa2","#ffb7b2","#ffdac1","#b5ead7","#c7ceea","#f6c1ff"];
 
-/* ================= 音乐（已修复） ================= */
-const audio=new Audio(
-  "https://dl.dropboxusercontent.com/s/z9j39q493f2f0yq/happy_birthday.mp3?dl=0"
-);
-audio.loop=true;
+/* ================= Web Audio API 生成音乐 ================= */
+let audioCtx, gainNode, isPlaying=false;
+
+// 更完整的生日快乐旋律（频率Hz + 持续时间s）
+const melody = [
+  {note: 264, duration:0.4},{note: 264, duration:0.4},{note: 297, duration:0.8},{note: 264, duration:0.8},{note: 352, duration:0.8},{note: 330, duration:1.2},
+  {note: 264, duration:0.4},{note: 264, duration:0.4},{note: 297, duration:0.8},{note: 264, duration:0.8},{note: 396, duration:0.8},{note: 352, duration:1.2},
+  {note: 264, duration:0.4},{note: 264, duration:0.4},{note: 528, duration:0.8},{note: 440, duration:0.8},{note: 352, duration:0.8},{note: 330, duration:0.8},{note: 297, duration:1.2},
+  {note: 466, duration:0.4},{note: 466, duration:0.4},{note: 440, duration:0.8},{note: 352, duration:0.8},{note: 396, duration:0.8},{note: 352, duration:1.2}
+];
+
+function playMelody(){
+  if(!audioCtx){
+    audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = 0.15; // 柔和音量
+    gainNode.connect(audioCtx.destination);
+  }
+
+  let startTime = audioCtx.currentTime;
+  melody.forEach(m=>{
+    const osc = audioCtx.createOscillator();
+    osc.frequency.value = m.note;
+    osc.type = "sine";
+    osc.connect(gainNode);
+    osc.start(startTime);
+    osc.stop(startTime + m.duration);
+    startTime += m.duration;
+  });
+
+  // 循环播放
+  setTimeout(()=>{
+    if(isPlaying) playMelody();
+  }, melody.reduce((sum,m)=>sum+m.duration,0)*1000);
+}
 
 /* ================= Canvas ================= */
 const canvas=document.getElementById("canvas");
@@ -83,7 +111,7 @@ canvas.height=innerHeight;
 
 let particles=[];
 let started=false;
-let messageShown=false; // **保留 7 秒等待逻辑的核心变量**
+let messageShown=false; 
 
 /* ================= 粒子 ================= */
 class Particle{
@@ -127,7 +155,7 @@ function randomFirework(x,y){
   }
 }
 
-/* 💖 心 + 名字（稳） */
+/* 💖 心 + 名字 */
 function heartWithName(cx,cy){
   for(let t=0;t<Math.PI*2;t+=0.1){
     const x=16*Math.sin(t)**3;
@@ -162,12 +190,11 @@ function heartWithName(cx,cy){
   }
 }
 
-/* 🎂 蛋糕 (最终优化形状！) */
+/* 🎂 蛋糕 */
 function cakeFirework(cx,cy){
   let layerHeight = 18;
   let topY = cy - 3 * layerHeight;
 
-  // --- 1. 底部蛋糕层 (最宽, 颜色深) ---
   for(let x = -40; x <= 40; x += 3){
     for(let i = 0; i < 2; i++){
       particles.push(new Particle(
@@ -175,14 +202,13 @@ function cakeFirework(cx,cy){
         cy + (Math.random() * 4), 
         (Math.random() - 0.5) * 0.1,
         -1.0, 
-        "#ff9aa2", // 深粉色
+        "#ff9aa2",
         1.5, 
         0.01
       ));
     }
   }
 
-  // --- 2. 中间奶油层 (中等宽度, 颜色亮) ---
   for(let x = -30; x <= 30; x += 3){
     for(let i = 0; i < 2; i++){
       particles.push(new Particle(
@@ -190,14 +216,13 @@ function cakeFirework(cx,cy){
         cy - layerHeight + (Math.random() * 4), 
         (Math.random() - 0.5) * 0.1,
         -1.0, 
-        "#ffdac1", // 奶油色
+        "#ffdac1",
         1.5, 
         0.01
       ));
     }
   }
 
-  // --- 3. 顶部奶油层 (最窄, 颜色最亮) ---
   for(let x = -20; x <= 20; x += 3){
     for(let i = 0; i < 2; i++){
       particles.push(new Particle(
@@ -205,25 +230,23 @@ function cakeFirework(cx,cy){
         cy - 2 * layerHeight + (Math.random() * 4), 
         (Math.random() - 0.5) * 0.1,
         -1.0, 
-        "#ffe3ec", // 亮白色
-        1.5, 
+        "#ffe3ec",
+        1.5,
         0.01
       ));
     }
   }
 
-  // --- 4. 蜡烛/火焰 (5 根蜡烛) ---
   let candleCount = 5; 
   for(let c = 0; c < candleCount; c++){
     let candleX = cx - 15 + c * (30 / (candleCount - 1));
-    
     for(let i = 0; i < 15; i++){
       particles.push(new Particle(
         candleX + (Math.random() - 0.5) * 3, 
         topY,
         (Math.random() - 0.5) * 0.5,
         -2.0, 
-        i % 2 === 0 ? "#ff9a00" : "#ffcc00", // 火焰颜色
+        i % 2 === 0 ? "#ff9a00" : "#ffcc00",
         1.5,
         0.01
       ));
@@ -244,40 +267,37 @@ function animate(){
 }
 animate();
 
-/* ================= 启动（修复音乐，保留 7 秒等待） ================= */
-document.getElementById("startScreen").onclick=()=>{
+/* ================= 启动 ================= */
+document.getElementById("startScreen").onclick = ()=>{
   document.getElementById("startScreen").style.display="none";
   started=true;
-
-  audio.play().catch(()=>{}); 
+  isPlaying = true;
+  playMelody(); // 🎵 点击后立即播放音乐
 
   randomFirework(canvas.width/2,canvas.height/2);
   setInterval(randomFirework,520);
 
-  // ⭐ 保留 7 秒等待逻辑
   setTimeout(()=>{
     const msg=document.getElementById("finalMessage");
     msg.style.display="block";
     msg.style.animationPlayState="running";
-    messageShown=true; // 7 秒后解锁交互
+    messageShown=true;
   },7000);
 };
 
-/* ================= 稳定单双击（提高识别率，保留 7 秒等待） ================= */
+/* ================= 单/双击交互 ================= */
 let clickTimer=null;
 canvas.addEventListener("click",e=>{
-  // ⭐ 检查！必须 started 和 messageShown 都为 true 才能执行
-  if(!started||!messageShown) return; 
-
+  if(!started||!messageShown) return;
   if(clickTimer){
     clearTimeout(clickTimer);
     clickTimer=null;
-    cakeFirework(e.clientX,e.clientY); // 双击：蛋糕 (已优化)
+    cakeFirework(e.clientX,e.clientY);
   }else{
     clickTimer=setTimeout(()=>{
-      heartWithName(e.clientX,e.clientY); // 单击：心形
+      heartWithName(e.clientX,e.clientY);
       clickTimer=null;
-    },350); // ⭐ 双击识别时间改为 350ms
+    },350);
   }
 });
 
@@ -286,6 +306,5 @@ onresize=()=>{
   canvas.height=innerHeight;
 };
 </script>
-
 </body>
 </html>
