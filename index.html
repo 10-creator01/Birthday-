@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>生日快乐</title>
+<title>生日快乐 - 最终稳定版</title>
 
 <style>
 body{
@@ -71,6 +71,7 @@ const COLORS=["#ff9aa2","#ffb7b2","#ffdac1","#b5ead7","#c7ceea","#f6c1ff"];
 
 /* ================= 音乐（已修复） ================= */
 const audio=new Audio(
+  // 修复了之前失效的链接
   "https://dl.dropboxusercontent.com/s/z9j39q493f2f0yq/happy_birthday.mp3?dl=0"
 );
 audio.loop=true;
@@ -83,7 +84,7 @@ canvas.height=innerHeight;
 
 let particles=[];
 let started=false;
-let messageShown=false;
+let messageShown=false; // **保留 7 秒等待逻辑的核心变量**
 
 /* ================= 粒子 ================= */
 class Particle{
@@ -185,7 +186,7 @@ function cakeFirework(cx,cy){
       -1.5, // 向上飘
       i%2===0 ? "#ff9a00" : "#ffcc00", // 火焰颜色
       1.5,
-      0.01 // 轻微重力
+      0.01 
     ));
   }
 }
@@ -213,19 +214,19 @@ document.getElementById("startScreen").onclick=()=>{
   randomFirework(canvas.width/2,canvas.height/2);
   setInterval(randomFirework,520);
 
-  // 7 秒等待逻辑：保留
+  // ⭐ 保留 7 秒等待逻辑
   setTimeout(()=>{
     const msg=document.getElementById("finalMessage");
     msg.style.display="block";
     msg.style.animationPlayState="running";
-    messageShown=true; 
+    messageShown=true; // 7 秒后解锁交互
   },7000);
 };
 
-/* ================= 稳定单双击（提高双击识别率，保留 7 秒等待） ================= */
+/* ================= 稳定单双击（提高识别率，保留 7 秒等待） ================= */
 let clickTimer=null;
 canvas.addEventListener("click",e=>{
-  // ⭐ 保留 7 秒检查
+  // ⭐ 检查！必须 started 和 messageShown 都为 true 才能执行
   if(!started||!messageShown) return; 
 
   if(clickTimer){
@@ -236,7 +237,7 @@ canvas.addEventListener("click",e=>{
     clickTimer=setTimeout(()=>{
       heartWithName(e.clientX,e.clientY); // 单击：心形
       clickTimer=null;
-    },350); // ⭐ 将 260ms 提高到 350ms，提高双击识别率
+    },350); // ⭐ 双击识别时间改为 350ms
   }
 });
 
