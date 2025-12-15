@@ -117,6 +117,8 @@ let started = false;
 let messageShown = false;
 let cakeHoldTimer = null;
 
+let textParticles = [];
+
 function randomFirework() {
   const x = Math.random() * canvas.width;
   const y = Math.random() * canvas.height * 0.7;
@@ -133,17 +135,30 @@ function randomFirework() {
 
 function heartWithName(cx, cy) {
   const color = "hotpink";
+
+  // 心形粒子
   for (let t = 0; t < Math.PI * 2; t += 0.08) {
     const x = 16 * Math.pow(Math.sin(t), 3);
-    const y = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
-    particles.push(new Particle(cx, cy, x * 0.15, y * 0.15, color));
+    const y = -(13 * Math.cos(t)
+      - 5 * Math.cos(2 * t)
+      - 2 * Math.cos(3 * t)
+      - Math.cos(4 * t));
+
+    particles.push(
+      new Particle(
+        cx,
+        cy,
+        x * 0.15,
+        y * 0.15,
+        color
+      )
+    );
   }
 
-  const nameEl = document.createElement("div");
-  nameEl.id = "nameFromHeart";
-  nameEl.innerText = NAME;
-  document.body.appendChild(nameEl);
-  setTimeout(() => nameEl.remove(), 4000);
+  // 名字跟随心形
+  textParticles.push(
+    new TextParticle(NAME, cx, cy)
+  );
 }
 
 function cakeFirework(cx, cy) {
@@ -225,6 +240,69 @@ onresize = () => {
   canvas.width = innerWidth;
   canvas.height = innerHeight;
 };
+
+// 🎁 终极隐藏彩蛋：心 + 名字 + 蛋糕 + 大爆
+function ultimateSurprise(x, y) {
+  // 心 + 名字
+  heartWithName(x, y);
+
+  // 蛋糕
+  setTimeout(() => {
+    cakeFirework(x, y + 60);
+  }, 300);
+
+  // 大爆炸
+  setTimeout(() => {
+    for (let i = 0; i < 6; i++) {
+      setTimeout(() => {
+        randomFirework();
+      }, i * 120);
+    }
+  }, 800);
+}
+
+/* 手机：三指触摸 */
+document.addEventListener("touchstart", e => {
+  if (!started || !messageShown) return;
+  if (e.touches.length === 3) {
+    const t = e.touches[0];
+    ultimateSurprise(t.clientX, t.clientY);
+  }
+});
+
+/* 电脑：Shift + 点击 */
+document.addEventListener("click", e => {
+  if (!started || !messageShown) return;
+  if (e.shiftKey) {
+    ultimateSurprise(e.clientX, e.clientY);
+  }
+});
+
+class TextParticle {
+  constructor(text, x, y) {
+    this.text = text;
+    this.x = x;
+    this.y = y;
+    this.vy = -0.3;
+    this.alpha = 1;
+  }
+  update() {
+    this.y += this.vy;
+    this.alpha -= 0.003;
+  }
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.alpha;
+    ctx.fillStyle = "pink";
+    ctx.font = "28px Arial";
+    ctx.textAlign = "center";
+    ctx.shadowColor = "hotpink";
+    ctx.shadowBlur = 15;
+    ctx.fillText(this.text, this.x, this.y);
+    ctx.restore();
+  }
+}
+
 </script>
 
 </body>
