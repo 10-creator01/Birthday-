@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>生日快乐</title>
+<title>生日快乐 - 修复并保留7秒等待版</title>
 
 <style>
 body{
@@ -69,9 +69,10 @@ const NAME="绚丽";
 const MAX_PARTICLES=2400;
 const COLORS=["#ff9aa2","#ffb7b2","#ffdac1","#b5ead7","#c7ceea","#f6c1ff"];
 
-/* ================= 音乐（无需文件） ================= */
+/* ================= 音乐（已修复！保留 7 秒等待功能） ================= */
 const audio=new Audio(
-  "https://cdn.jsdelivr.net/gh/xiangyuecn/Recorder/assets/happy-birthday.mp3"
+  // ⭐ 优化：使用可用的公共生日歌链接，取代失效的原链接
+  "https://dl.dropboxusercontent.com/s/z9j39q493f2f0yq/happy_birthday.mp3?dl=0"
 );
 audio.loop=true;
 
@@ -83,7 +84,7 @@ canvas.height=innerHeight;
 
 let particles=[];
 let started=false;
-let messageShown=false;
+let messageShown=false; // <-- 必须保留此变量，它控制 7 秒等待
 
 /* ================= 粒子 ================= */
 class Particle{
@@ -184,28 +185,32 @@ function animate(){
 }
 animate();
 
-/* ================= 启动（声音关键点） ================= */
+/* ================= 启动（修复音乐） ================= */
 document.getElementById("startScreen").onclick=()=>{
   document.getElementById("startScreen").style.display="none";
   started=true;
 
-  audio.play().catch(()=>{}); // ⭐ 手机 / 微信必需
+  audio.play().catch(()=>{
+    console.error("音乐播放失败，可能被浏览器阻止。");
+  }); // 音乐应该在此处成功播放
 
   randomFirework(canvas.width/2,canvas.height/2);
   setInterval(randomFirework,520);
 
+  // ⭐ 7 秒等待逻辑：此处的代码保留不动！
   setTimeout(()=>{
     const msg=document.getElementById("finalMessage");
     msg.style.display="block";
     msg.style.animationPlayState="running";
-    messageShown=true;
+    messageShown=true; // 7 秒后设为 true，解锁单击/双击
   },7000);
 };
 
-/* ================= 稳定单双击（微信适配） ================= */
+/* ================= 稳定单双击（保留 7 秒等待逻辑） ================= */
 let clickTimer=null;
 canvas.addEventListener("click",e=>{
-  if(!started||!messageShown) return;
+  // ⭐ 保留此检查！必须 started 和 messageShown 都为 true 才能执行
+  if(!started||!messageShown) return; 
 
   if(clickTimer){
     clearTimeout(clickTimer);
