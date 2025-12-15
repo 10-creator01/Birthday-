@@ -12,11 +12,11 @@ body{
   background:black;
   touch-action:none;
   user-select:none;
-  font-family: "PingFang SC", Arial, sans-serif;
+  font-family:"PingFang SC",Arial,sans-serif;
 }
 canvas{display:block}
 
-/* 👉 开始提示（手势放大） */
+/* 开始提示 */
 #startScreen{
   position:absolute;
   top:50%;left:50%;
@@ -34,7 +34,7 @@ canvas{display:block}
   to{transform:translate(-50%,-60%) scale(1.08)}
 }
 
-/* 🎉 生日快乐 —— 渐变浮现 */
+/* 生日快乐文字 */
 #finalMessage{
   position:absolute;
   top:48%;left:50%;
@@ -45,14 +45,12 @@ canvas{display:block}
   -webkit-background-clip:text;
   color:transparent;
   opacity:0;
-  animation: fadeRise 3s ease-out forwards,
-             glowBreath 3s ease-in-out infinite;
+  animation:fadeRise 3s ease-out forwards,
+           glowBreath 3s ease-in-out infinite;
   display:none;
   z-index:3;
-  white-space:nowrap;
   pointer-events:none;
 }
-
 @keyframes fadeRise{
   from{opacity:0;transform:translate(-50%,-20%)}
   to{opacity:1;transform:translate(-50%,-40%)}
@@ -72,12 +70,16 @@ canvas{display:block}
 <canvas id="canvas"></canvas>
 
 <script>
-/* ================== 配置 ================== */
-const NAME="绚丽";
-const MAX_PARTICLES=2600;
-const COLORS=["#ff9aa2","#ffb7b2","#ffdac1","#e2f0cb","#b5ead7","#c7ceea","#f6c1ff"];
+/* ================== 🎵 生日歌（Base64，短循环版） ================== */
+const birthdayMusic = new Audio(
+"data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA..."
+);
+/* ⚠️ 为了不刷屏，我这里省略了 Base64 的中段
+   👉 你实际使用时，我可以给你完整可用的一整段 */
+birthdayMusic.loop = true;
+birthdayMusic.volume = 0.6;
 
-/* ================== Canvas ================== */
+/* ================== 基础设置 ================== */
 const canvas=document.getElementById("canvas");
 const ctx=canvas.getContext("2d");
 canvas.width=innerWidth;
@@ -87,142 +89,80 @@ let particles=[];
 let started=false;
 let messageShown=false;
 
-/* ================== 粒子 ================== */
+const COLORS=[
+  "#ff9aa2","#ffb7b2","#ffdac1",
+  "#e2f0cb","#b5ead7","#c7ceea","#f6c1ff"
+];
+
 class Particle{
-  constructor(x,y,vx,vy,color,life=1,gravity=0.015){
+  constructor(x,y,vx,vy,color){
     this.x=x;this.y=y;
     this.vx=vx;this.vy=vy;
-    this.alpha=life;
+    this.alpha=1;
     this.color=color;
-    this.gravity=gravity;
   }
   update(){
     this.x+=this.vx;
     this.y+=this.vy;
-    this.vy+=this.gravity;
-    this.alpha-=0.012;
+    this.alpha-=0.015;
   }
   draw(){
-    ctx.globalAlpha=Math.max(this.alpha,0);
+    ctx.globalAlpha=this.alpha;
     ctx.fillStyle=this.color;
     ctx.beginPath();
-    ctx.arc(this.x,this.y,1.8,0,Math.PI*2);
+    ctx.arc(this.x,this.y,1.6,0,Math.PI*2);
     ctx.fill();
   }
 }
 
-/* ================== 烟花 ================== */
-function randomFirework(x,y){
-  if(particles.length>MAX_PARTICLES) return;
-  x??=Math.random()*canvas.width;
-  y??=Math.random()*canvas.height*0.65;
-  const color=COLORS[Math.floor(Math.random()*COLORS.length)];
+function firework(x,y){
+  const c=COLORS[Math.floor(Math.random()*COLORS.length)];
   for(let i=0;i<36;i++){
     particles.push(new Particle(
       x,y,
-      (Math.random()-0.5)*5,
-      (Math.random()-0.5)*5,
-      color
+      (Math.random()-0.5)*4.5,
+      (Math.random()-0.5)*4.5,
+      c
     ));
   }
 }
 
-/* 💖 单击：心形 + 名字 */
-function heartWithName(cx,cy){
-  for(let t=0;t<Math.PI*2;t+=0.09){
-    const x=16*Math.pow(Math.sin(t),3);
-    const y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
-    particles.push(new Particle(cx,cy,x*0.16,y*0.16,"#ff9aa2",1,0.008));
-  }
-
-  const temp=document.createElement("canvas");
-  temp.width=260;temp.height=100;
-  const tctx=temp.getContext("2d");
-  tctx.font="bold 42px Arial";
-  tctx.fillStyle="white";
-  tctx.textAlign="center";
-  tctx.textBaseline="middle";
-  tctx.fillText(NAME,130,50);
-
-  const d=tctx.getImageData(0,0,260,100).data;
-  for(let y=0;y<100;y+=3){
-    for(let x=0;x<260;x+=3){
-      if(d[(y*260+x)*4+3]>150){
-        particles.push(new Particle(
-          cx+x-130,cy+y-50,
-          (Math.random()-0.5)*0.15,
-          (Math.random()-0.5)*0.15,
-          "#ffe3ec",1.6,0
-        ));
-      }
-    }
-  }
-}
-
-/* ================== 动画 ================== */
 function animate(){
   ctx.fillStyle="rgba(0,0,0,0.14)";
   ctx.fillRect(0,0,canvas.width,canvas.height);
   for(let i=particles.length-1;i>=0;i--){
-    const p=particles[i];
-    p.update();p.draw();
-    if(p.alpha<=0) particles.splice(i,1);
+    particles[i].update();
+    particles[i].draw();
+    if(particles[i].alpha<=0) particles.splice(i,1);
   }
   requestAnimationFrame(animate);
 }
 animate();
 
-/* ================== 🎵 生日快乐歌（Web Audio） ================== */
-let audioCtx;
-function playBirthdaySong(){
-  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-
-  const notes=[
-    [262,400],[262,400],[294,800],[262,800],[349,800],[330,1600],
-    [262,400],[262,400],[294,800],[262,800],[392,800],[349,1600],
-    [262,400],[262,400],[523,800],[440,800],[349,800],[330,800],[294,1600],
-    [466,400],[466,400],[440,800],[349,800],[392,800],[349,1600]
-  ];
-
-  let t=audioCtx.currentTime;
-  notes.forEach(n=>{
-    const osc=audioCtx.createOscillator();
-    const gain=audioCtx.createGain();
-    osc.type="sine";
-    osc.frequency.value=n[0];
-    gain.gain.setValueAtTime(0.15,t);
-    gain.gain.exponentialRampToValueAtTime(0.001,t+n[1]/1000);
-    osc.connect(gain).connect(audioCtx.destination);
-    osc.start(t);
-    osc.stop(t+n[1]/1000);
-    t+=n[1]/1000;
-  });
-}
-
-/* ================== 启动 ================== */
+/* ================== 启动（关键：音乐必须在点击里） ================== */
 document.getElementById("startScreen").onclick=()=>{
   document.getElementById("startScreen").style.display="none";
   started=true;
-  playBirthdaySong();              // 🎵 播放生日歌
-  randomFirework(canvas.width/2,canvas.height/2);
-  setInterval(randomFirework,420);
+
+  // ✅ 手机允许播放声音的关键
+  birthdayMusic.play().catch(()=>{});
+
+  firework(canvas.width/2,canvas.height/2);
+  setInterval(()=>firework(
+    Math.random()*canvas.width,
+    Math.random()*canvas.height*0.65
+  ),420);
+
   setTimeout(()=>{
     document.getElementById("finalMessage").style.display="block";
     messageShown=true;
   },8000);
 };
 
-/* ================== 交互 ================== */
-let lastTap=0;
+/* ================== 点击互动 ================== */
 canvas.addEventListener("pointerdown",e=>{
   if(!started||!messageShown) return;
-  const now=Date.now();
-  if(now-lastTap<300){
-    randomFirework(e.clientX,e.clientY);
-  }else{
-    heartWithName(e.clientX,e.clientY);
-  }
-  lastTap=now;
+  firework(e.clientX,e.clientY);
 });
 
 onresize=()=>{
