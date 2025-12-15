@@ -64,13 +64,12 @@ canvas{display:block}
 <script>
 /* ================= 配置 ================= */
 const NAME="绚丽";
-const MAX_PARTICLES=2400;
+const MAX_PARTICLES=3000;
 const COLORS=["#ff9aa2","#ffb7b2","#ffdac1","#b5ead7","#c7ceea","#f6c1ff"];
 
-/* ================= Web Audio API 生成音乐 ================= */
+/* ================= Web Audio API 音乐 ================= */
 let audioCtx, gainNode, isPlaying=false;
 
-// 更完整的生日快乐旋律（频率Hz + 持续时间s）
 const melody = [
   {note: 264, duration:0.4},{note: 264, duration:0.4},{note: 297, duration:0.8},{note: 264, duration:0.8},{note: 352, duration:0.8},{note: 330, duration:1.2},
   {note: 264, duration:0.4},{note: 264, duration:0.4},{note: 297, duration:0.8},{note: 264, duration:0.8},{note: 396, duration:0.8},{note: 352, duration:1.2},
@@ -82,7 +81,7 @@ function playMelody(){
   if(!audioCtx){
     audioCtx = new (window.AudioContext||window.webkitAudioContext)();
     gainNode = audioCtx.createGain();
-    gainNode.gain.value = 0.15; // 柔和音量
+    gainNode.gain.value = 0.15;
     gainNode.connect(audioCtx.destination);
   }
 
@@ -97,10 +96,7 @@ function playMelody(){
     startTime += m.duration;
   });
 
-  // 循环播放
-  setTimeout(()=>{
-    if(isPlaying) playMelody();
-  }, melody.reduce((sum,m)=>sum+m.duration,0)*1000);
+  setTimeout(()=>{ if(isPlaying) playMelody(); }, melody.reduce((sum,m)=>sum+m.duration,0)*1000);
 }
 
 /* ================= Canvas ================= */
@@ -190,66 +186,49 @@ function heartWithName(cx,cy){
   }
 }
 
-/* 🎂 蛋糕 */
-function cakeFirework(cx,cy){
-  let layerHeight = 18;
-  let topY = cy - 3 * layerHeight;
+/* 🎂 最终优化蛋糕 */
+function cakeFirework(cx, cy){
+  let layerHeight = 20;
+  let bottomWidth = 80, middleWidth = 60, topWidth = 40;
 
-  for(let x = -40; x <= 40; x += 3){
-    for(let i = 0; i < 2; i++){
-      particles.push(new Particle(
-        cx + x + (Math.random() - 0.5) * 6, 
-        cy + (Math.random() * 4), 
-        (Math.random() - 0.5) * 0.1,
-        -1.0, 
-        "#ff9aa2",
-        1.5, 
-        0.01
-      ));
+  function drawLayer(width, yOffset, color){
+    for(let y=0;y<layerHeight;y++){
+      for(let x=-width/2;x<=width/2;x+=3){
+        let offsetX = x + (Math.random()-0.5)*4;
+        let offsetY = cy + yOffset + y + (Math.random()-0.5)*2;
+        particles.push(new Particle(cx+offsetX, offsetY, 0,0,color,1.5,0));
+      }
     }
   }
 
-  for(let x = -30; x <= 30; x += 3){
-    for(let i = 0; i < 2; i++){
-      particles.push(new Particle(
-        cx + x + (Math.random() - 0.5) * 6, 
-        cy - layerHeight + (Math.random() * 4), 
-        (Math.random() - 0.5) * 0.1,
-        -1.0, 
-        "#ffdac1",
-        1.5, 
-        0.01
-      ));
-    }
+  drawLayer(bottomWidth,0,"#ff9aa2");
+  drawLayer(middleWidth,-layerHeight,"#ffdac1");
+  drawLayer(topWidth,-2*layerHeight,"#ffe3ec");
+
+  // 奶油波纹装饰
+  for(let i=0;i<50;i++){
+    let px = cx + (Math.random()-0.5)*topWidth;
+    let py = cy - 2*layerHeight - 3 + Math.sin(i/5)*2 + (Math.random()-0.5)*2;
+    let c = i%2===0?"#fff5f5":"#ffe3f0";
+    particles.push(new Particle(px,py,0,0,c,1.5,0));
   }
 
-  for(let x = -20; x <= 20; x += 3){
-    for(let i = 0; i < 2; i++){
-      particles.push(new Particle(
-        cx + x + (Math.random() - 0.5) * 6, 
-        cy - 2 * layerHeight + (Math.random() * 4), 
-        (Math.random() - 0.5) * 0.1,
-        -1.0, 
-        "#ffe3ec",
-        1.5,
-        0.01
-      ));
+  // 蜡烛与火焰
+  let candleCount=5;
+  let topY = cy - 3*layerHeight;
+  for(let c=0;c<candleCount;c++){
+    let candleX = cx - topWidth/2 + c*(topWidth/(candleCount-1));
+    for(let h=0;h<12;h++){
+      let px = candleX + (Math.random()-0.5)*1;
+      let py = topY - h;
+      particles.push(new Particle(px,py,0,0,"#ffd700",1.5,0));
     }
-  }
-
-  let candleCount = 5; 
-  for(let c = 0; c < candleCount; c++){
-    let candleX = cx - 15 + c * (30 / (candleCount - 1));
-    for(let i = 0; i < 15; i++){
-      particles.push(new Particle(
-        candleX + (Math.random() - 0.5) * 3, 
-        topY,
-        (Math.random() - 0.5) * 0.5,
-        -2.0, 
-        i % 2 === 0 ? "#ff9a00" : "#ffcc00",
-        1.5,
-        0.01
-      ));
+    // 火焰
+    for(let f=0;f<10;f++){
+      let fx = candleX + (Math.random()-0.5)*1.5 + Math.sin(f/2)*0.5;
+      let fy = topY - 12 - f*1.2;
+      let color = f%2===0 ? "#ff9a00" : "#ffcc00";
+      particles.push(new Particle(fx,fy,(Math.random()-0.5)*0.2, -0.6-f*0.02,color,1.2,0.01));
     }
   }
 }
