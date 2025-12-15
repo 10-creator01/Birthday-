@@ -21,7 +21,7 @@ canvas{display:block}
   position:absolute;
   top:50%;left:50%;
   transform:translate(-50%,-50%);
-  font-size:4.2em;           /* ⭐ 放大手势 */
+  font-size:4.2em;
   color:white;
   text-align:center;
   cursor:pointer;
@@ -39,7 +39,7 @@ canvas{display:block}
   position:absolute;
   top:45%;left:50%;
   transform:translate(-50%,-50%);
-  font-size:2.4em;           /* ⭐ 整体缩小 */
+  font-size:2.4em;
   font-weight:600;
   background:linear-gradient(90deg,#ffb7b2,#ff9aa2,#f6c1ff);
   -webkit-background-clip:text;
@@ -64,6 +64,39 @@ canvas{display:block}
 <canvas id="canvas"></canvas>
 
 <script>
+/* ================== 🎵 生日歌（Web Audio，可循环） ================== */
+let audioCtx, gainNode, isPlaying = false;
+
+const melody = [
+  [262,400],[262,400],[294,800],[262,800],[349,800],[330,1600],
+  [262,400],[262,400],[294,800],[262,800],[392,800],[349,1600]
+];
+
+function playBirthdaySong(){
+  if(isPlaying) return;
+  isPlaying = true;
+
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  gainNode = audioCtx.createGain();
+  gainNode.gain.value = 0.08;
+  gainNode.connect(audioCtx.destination);
+
+  let time = audioCtx.currentTime;
+
+  melody.forEach(([freq,dur])=>{
+    const osc = audioCtx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    osc.connect(gainNode);
+    osc.start(time);
+    osc.stop(time + dur/1000);
+    time += dur/1000;
+  });
+
+  // ⭐ 循环
+  setTimeout(playBirthdaySong, melody.reduce((a,b)=>a+b[1],0));
+}
+
 /* ================== 配置 ================== */
 const NAME="绚丽";
 const MAX_PARTICLES=2400;
@@ -72,7 +105,7 @@ const COLORS=[
   "#e2f0cb","#b5ead7","#c7ceea","#f6c1ff"
 ];
 
-/* ================== 初始化 ================== */
+/* ================== Canvas 初始化 ================== */
 const canvas=document.getElementById("canvas");
 const ctx=canvas.getContext("2d");
 canvas.width=innerWidth;
@@ -95,7 +128,7 @@ class Particle{
     this.x+=this.vx;
     this.y+=this.vy;
     this.vy+=this.gravity;
-    this.alpha-=0.008;        /* ⭐ 更慢消失 */
+    this.alpha-=0.008;
   }
   draw(){
     ctx.globalAlpha=Math.max(this.alpha,0);
@@ -106,7 +139,7 @@ class Particle{
   }
 }
 
-/* ================== 普通烟花（稀疏） ================== */
+/* ================== 烟花 ================== */
 function randomFirework(x,y){
   if(particles.length>MAX_PARTICLES) return;
   x??=Math.random()*canvas.width;
@@ -122,68 +155,23 @@ function randomFirework(x,y){
   }
 }
 
-/* 💖 心形 + 名字（单击） */
+/* 💖 单击：心形 + 名字 */
 function heartWithName(cx,cy){
   if(particles.length>MAX_PARTICLES) return;
 
-  // 心形
   for(let t=0;t<Math.PI*2;t+=0.1){
     const x=16*Math.pow(Math.sin(t),3);
     const y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
-    particles.push(new Particle(
-      cx,cy,
-      x*0.14,
-      y*0.14,
-      "#ff9aa2",
-      1.4,
-      0
-    ));
-  }
-
-  // 名字粒子（更小更清晰）
-  const temp=document.createElement("canvas");
-  temp.width=220;temp.height=90;
-  const tctx=temp.getContext("2d");
-  tctx.font="bold 36px Arial";
-  tctx.fillStyle="white";
-  tctx.textAlign="center";
-  tctx.textBaseline="middle";
-  tctx.fillText(NAME,110,45);
-
-  const d=tctx.getImageData(0,0,220,90).data;
-  for(let y=0;y<90;y+=3){
-    for(let x=0;x<220;x+=3){
-      if(d[(y*220+x)*4+3]>150){
-        particles.push(new Particle(
-          cx+x-110,
-          cy+y-45,
-          (Math.random()-0.5)*0.1,
-          (Math.random()-0.5)*0.1,
-          "#ffe3ec",
-          1.8,
-          0
-        ));
-      }
-    }
+    particles.push(new Particle(cx,cy,x*0.14,y*0.14,"#ff9aa2",1.4,0));
   }
 }
 
-/* 🎂 蛋糕烟花（双击） */
+/* 🎂 双击：蛋糕 */
 function cakeFirework(cx,cy){
   if(particles.length>MAX_PARTICLES) return;
-  const color="#ffdac1";
-
   for(let layer=0;layer<3;layer++){
     for(let x=-28;x<=28;x+=4){
-      particles.push(new Particle(
-        cx+x,
-        cy-layer*14,
-        (Math.random()-0.5)*0.8,
-        -Math.random()*1.2,
-        color,
-        1.2,
-        0
-      ));
+      particles.push(new Particle(cx+x,cy-layer*14,0,-1,"#ffdac1",1.2,0));
     }
   }
 }
@@ -201,16 +189,20 @@ function animate(){
 }
 animate();
 
-/* ================== 启动 ================== */
+/* ================== 启动（关键：音乐从这里开始） ================== */
 document.getElementById("startScreen").onclick=()=>{
   document.getElementById("startScreen").style.display="none";
   started=true;
+
+  playBirthdaySong(); // ⭐ 手机可播放的关键点
+
   randomFirework(canvas.width/2,canvas.height/2);
   setInterval(randomFirework,520);
+
   setTimeout(()=>{
     const msg=document.getElementById("finalMessage");
     msg.style.display="block";
-    msg.style.animationPlayState="running"; // ⭐ 渐变出现
+    msg.style.animationPlayState="running";
     messageShown=true;
   },7000);
 };
