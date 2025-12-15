@@ -64,172 +64,67 @@ canvas{display:block}
 <canvas id="canvas"></canvas>
 
 <script>
-/* ================== 音乐（Web Audio · 可循环 · 微信可用） ================== */
+/* ================== 🎵 微信可播放的生日歌 ================== */
 let audioCtx;
-let bgmTimer = null;
+let musicStarted = false;
+let musicTimer = null;
 
-function playBirthdaySong(){
-  if(audioCtx) return;
+function initAudio() {
+  if (musicStarted) return;
+  musicStarted = true;
 
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  const notes = [
-    262,262,294,262,349,330,
-    262,262,294,262,392,349,
-    262,262,523,440,349,330,294,
-    466,466,440,349,392,349
-  ];
+  playBirthdaySong();
+}
 
-  let i = 0;
+/* 🎶 生日快乐旋律（简化但好听） */
+const melody = [
+  [264, 500], [264, 500], [297, 1000], [264, 1000], [352, 1000], [330, 2000],
+  [264, 500], [264, 500], [297, 1000], [264, 1000], [396, 1000], [352, 2000],
+  [264, 500], [264, 500], [528, 1000], [440, 1000], [352, 1000], [330, 1000], [297, 2000],
+  [466, 500], [466, 500], [440, 1000], [352, 1000], [396, 1000], [352, 3000]
+];
 
-  function playNote(){
+function playBirthdaySong() {
+  let time = audioCtx.currentTime;
+
+  melody.forEach(([freq, dur]) => {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
+
     osc.type = "sine";
-    osc.frequency.value = notes[i];
-    gain.gain.value = 0.08;
+    osc.frequency.value = freq;
+
+    gain.gain.setValueAtTime(0.0001, time);
+    gain.gain.exponentialRampToValueAtTime(0.2, time + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.0001, time + dur / 1000);
 
     osc.connect(gain);
     gain.connect(audioCtx.destination);
 
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.4);
+    osc.start(time);
+    osc.stop(time + dur / 1000);
 
-    i = (i + 1) % notes.length;
-    bgmTimer = setTimeout(playNote, 420);
-  }
+    time += dur / 1000;
+  });
 
-  playNote();
+  // ⭐ 自动循环
+  clearTimeout(musicTimer);
+  musicTimer = setTimeout(playBirthdaySong, (time - audioCtx.currentTime) * 1000);
 }
 
-/* 微信兼容 */
-document.addEventListener("WeixinJSBridgeReady", playBirthdaySong);
-
-/* ================== 烟花原逻辑（完全保持不动） ================== */
-const NAME="绚丽";
-const MAX_PARTICLES=2400;
-const COLORS=["#ff9aa2","#ffb7b2","#ffdac1","#e2f0cb","#b5ead7","#c7ceea","#f6c1ff"];
-
-const canvas=document.getElementById("canvas");
-const ctx=canvas.getContext("2d");
-canvas.width=innerWidth;
-canvas.height=innerHeight;
-
-let particles=[];
-let started=false;
-let messageShown=false;
-
-class Particle{
-  constructor(x,y,vx,vy,color,life=1.2,gravity=0.01){
-    this.x=x;this.y=y;
-    this.vx=vx;this.vy=vy;
-    this.alpha=life;
-    this.color=color;
-    this.gravity=gravity;
+/* ================== 🔑 微信解锁音频 ================== */
+document.addEventListener("WeixinJSBridgeReady", () => {
+  if (audioCtx && audioCtx.state !== "running") {
+    audioCtx.resume();
   }
-  update(){
-    this.x+=this.vx;
-    this.y+=this.vy;
-    this.vy+=this.gravity;
-    this.alpha-=0.008;
-  }
-  draw(){
-    ctx.globalAlpha=Math.max(this.alpha,0);
-    ctx.fillStyle=this.color;
-    ctx.beginPath();
-    ctx.arc(this.x,this.y,1.6,0,Math.PI*2);
-    ctx.fill();
-  }
-}
+}, false);
 
-function randomFirework(x,y){
-  if(particles.length>MAX_PARTICLES) return;
-  x??=Math.random()*canvas.width;
-  y??=Math.random()*canvas.height*0.65;
-  const color=COLORS[Math.floor(Math.random()*COLORS.length)];
-  for(let i=0;i<28;i++){
-    particles.push(new Particle(
-      x,y,
-      (Math.random()-0.5)*4,
-      (Math.random()-0.5)*4,
-      color
-    ));
-  }
-}
-
-function heartWithName(cx,cy){
-  if(particles.length>MAX_PARTICLES) return;
-
-  for(let t=0;t<Math.PI*2;t+=0.1){
-    const x=16*Math.pow(Math.sin(t),3);
-    const y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
-    particles.push(new Particle(cx,cy,x*0.14,y*0.14,"#ff9aa2",1.4,0));
-  }
-
-  const temp=document.createElement("canvas");
-  temp.width=220;temp.height=90;
-  const tctx=temp.getContext("2d");
-  tctx.font="bold 36px Arial";
-  tctx.fillStyle="white";
-  tctx.textAlign="center";
-  tctx.textBaseline="middle";
-  tctx.fillText(NAME,110,45);
-
-  const d=tctx.getImageData(0,0,220,90).data;
-  for(let y=0;y<90;y+=3){
-    for(let x=0;x<220;x+=3){
-      if(d[(y*220+x)*4+3]>150){
-        particles.push(new Particle(cx+x-110,cy+y-45,(Math.random()-0.5)*0.1,(Math.random()-0.5)*0.1,"#ffe3ec",1.8,0));
-      }
-    }
-  }
-}
-
-function animate(){
-  ctx.fillStyle="rgba(0,0,0,0.18)";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  for(let i=particles.length-1;i>=0;i--){
-    const p=particles[i];
-    p.update();p.draw();
-    if(p.alpha<=0) particles.splice(i,1);
-  }
-  requestAnimationFrame(animate);
-}
-animate();
-
-/* ================== 启动（⭐ 在这里启动音乐） ================== */
-document.getElementById("startScreen").onclick=()=>{
-  document.getElementById("startScreen").style.display="none";
-  playBirthdaySong();   // ⭐ 手机 / 微信必需
-  started=true;
-
-  randomFirework(canvas.width/2,canvas.height/2);
-  setInterval(randomFirework,520);
-
-  setTimeout(()=>{
-    const msg=document.getElementById("finalMessage");
-    msg.style.display="block";
-    msg.style.animationPlayState="running";
-    messageShown=true;
-  },7000);
-};
-
-let lastTap=0;
-canvas.addEventListener("pointerdown",e=>{
-  if(!started||!messageShown) return;
-  const now=Date.now();
-  if(now-lastTap<300){
-    randomFirework(e.clientX,e.clientY);
-  }else{
-    heartWithName(e.clientX,e.clientY);
-  }
-  lastTap=now;
+/* ================== 👆 点击开始时初始化 ================== */
+document.getElementById("startScreen").addEventListener("click", () => {
+  initAudio();
 });
-
-onresize=()=>{
-  canvas.width=innerWidth;
-  canvas.height=innerHeight;
-};
 </script>
 
 </body>
