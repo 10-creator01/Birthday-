@@ -12,7 +12,7 @@ body{
   background:black;
   touch-action:none;
   user-select:none;
-  font-family: "PingFang SC", Arial, sans-serif;
+  font-family:"PingFang SC",Arial,sans-serif;
 }
 canvas{display:block}
 
@@ -21,22 +21,17 @@ canvas{display:block}
   position:absolute;
   top:50%;left:50%;
   transform:translate(-50%,-50%);
-  font-size:2.2em;
+  font-size:1.8em;           /* ⭐ 更小 */
   color:white;
   text-align:center;
   cursor:pointer;
   z-index:5;
   animation:bounce 1s infinite alternate;
-  text-shadow:0 0 10px hotpink;
-}
-#startScreen span{
-  display:block;
-  font-size:.5em;
-  margin-top:8px;
+  text-shadow:0 0 8px hotpink;
 }
 @keyframes bounce{
   from{transform:translate(-50%,-50%) scale(1)}
-  to{transform:translate(-50%,-58%) scale(1.05)}
+  to{transform:translate(-50%,-56%) scale(1.04)}
 }
 
 /* 生日快乐 */
@@ -44,7 +39,7 @@ canvas{display:block}
   position:absolute;
   top:45%;left:50%;
   transform:translate(-50%,-50%);
-  font-size:2.8em;
+  font-size:2.2em;          /* ⭐ 更小 */
   font-weight:600;
   background:linear-gradient(90deg,#ffb7b2,#ff9aa2,#f6c1ff);
   -webkit-background-clip:text;
@@ -55,25 +50,25 @@ canvas{display:block}
   white-space:nowrap;
 }
 @keyframes glow{
-  0%{filter:drop-shadow(0 0 4px #ffb7b2)}
-  50%{filter:drop-shadow(0 0 14px #ff9aa2)}
-  100%{filter:drop-shadow(0 0 4px #ffb7b2)}
+  0%{filter:drop-shadow(0 0 3px #ffb7b2)}
+  50%{filter:drop-shadow(0 0 10px #ff9aa2)}
+  100%{filter:drop-shadow(0 0 3px #ffb7b2)}
 }
 </style>
 </head>
 
 <body>
 
-<div id="startScreen">👆<span></span></div>
+<div id="startScreen">👆</div>
 <div id="finalMessage">🎉 生日快乐 🎉</div>
 <canvas id="canvas"></canvas>
 
 <script>
 /* ================== 配置 ================== */
 const NAME="绚丽";
-const MAX_PARTICLES=2600;
+const MAX_PARTICLES=2400;
 
-const FIREWORK_COLORS=[
+const COLORS=[
   "#ff9aa2","#ffb7b2","#ffdac1",
   "#e2f0cb","#b5ead7","#c7ceea","#f6c1ff"
 ];
@@ -90,7 +85,7 @@ let messageShown=false;
 
 /* ================== 粒子类 ================== */
 class Particle{
-  constructor(x,y,vx,vy,color,life=1,gravity=0.015){
+  constructor(x,y,vx,vy,color,life=1,gravity=0.012){
     this.x=x;this.y=y;
     this.vx=vx;this.vy=vy;
     this.alpha=life;
@@ -107,7 +102,7 @@ class Particle{
     ctx.globalAlpha=Math.max(this.alpha,0);
     ctx.fillStyle=this.color;
     ctx.beginPath();
-    ctx.arc(this.x,this.y,1.8,0,Math.PI*2);
+    ctx.arc(this.x,this.y,1.6,0,Math.PI*2); /* ⭐ 粒子更小 */
     ctx.fill();
   }
 }
@@ -116,55 +111,57 @@ class Particle{
 function randomFirework(x,y){
   if(particles.length>MAX_PARTICLES) return;
   x??=Math.random()*canvas.width;
-  y??=Math.random()*canvas.height*0.65;
-  const color=FIREWORK_COLORS[Math.floor(Math.random()*FIREWORK_COLORS.length)];
-  for(let i=0;i<36;i++){
+  y??=Math.random()*canvas.height*0.6;
+  const color=COLORS[Math.floor(Math.random()*COLORS.length)];
+  for(let i=0;i<28;i++){   /* ⭐ 数量减少 */
     particles.push(new Particle(
       x,y,
-      (Math.random()-0.5)*5,
-      (Math.random()-0.5)*5,
+      (Math.random()-0.5)*4,
+      (Math.random()-0.5)*4,
       color
     ));
   }
 }
 
-/* 💖 心形 + 名字（更清晰） */
+/* 💖 心形 + 名字（单击） */
 function heartWithName(cx,cy){
   if(particles.length>MAX_PARTICLES) return;
 
-  for(let t=0;t<Math.PI*2;t+=0.09){
+  // 心形
+  for(let t=0;t<Math.PI*2;t+=0.1){
     const x=16*Math.pow(Math.sin(t),3);
     const y=-(13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t));
     particles.push(new Particle(
       cx,cy,
-      x*0.16,
-      y*0.16,
+      x*0.14,
+      y*0.14,
       "#ff9aa2",
       1,
-      0.008
+      0.006
     ));
   }
 
+  // 名字
   const temp=document.createElement("canvas");
-  temp.width=260;temp.height=100;
+  temp.width=220;temp.height=90;
   const tctx=temp.getContext("2d");
-  tctx.font="bold 42px Arial";
+  tctx.font="bold 36px Arial";   /* ⭐ 字更小 */
   tctx.fillStyle="white";
   tctx.textAlign="center";
   tctx.textBaseline="middle";
-  tctx.fillText(NAME,130,50);
+  tctx.fillText(NAME,110,45);
 
-  const d=tctx.getImageData(0,0,260,100).data;
-  for(let y=0;y<100;y+=3){
-    for(let x=0;x<260;x+=3){
-      if(d[(y*260+x)*4+3]>150){
+  const d=tctx.getImageData(0,0,220,90).data;
+  for(let y=0;y<90;y+=3){
+    for(let x=0;x<220;x+=3){
+      if(d[(y*220+x)*4+3]>150){
         particles.push(new Particle(
-          cx+x-130,
-          cy+y-50,
-          (Math.random()-0.5)*0.15,
-          (Math.random()-0.5)*0.15,
+          cx+x-110,
+          cy+y-45,
+          (Math.random()-0.5)*0.12,
+          (Math.random()-0.5)*0.12,
           "#ffe3ec",
-          1.6,
+          1.8,
           0
         ));
       }
@@ -172,9 +169,42 @@ function heartWithName(cx,cy){
   }
 }
 
+/* 🎂 蛋糕烟花（双击） */
+function cakeFirework(cx,cy){
+  if(particles.length>MAX_PARTICLES) return;
+
+  const cakeColor="#ffdac1";
+  for(let layer=0;layer<3;layer++){
+    for(let x=-28;x<=28;x+=4){
+      particles.push(new Particle(
+        cx+x,
+        cy-layer*14,
+        (Math.random()-0.5)*0.6,
+        -Math.random()*0.8,
+        cakeColor,
+        1.2,
+        0
+      ));
+    }
+  }
+
+  // 蜡烛
+  for(let i=0;i<12;i++){
+    particles.push(new Particle(
+      cx,
+      cy-50,
+      (Math.random()-0.5)*0.5,
+      -Math.random()*1.5,
+      "#ffd700",
+      1,
+      -0.01
+    ));
+  }
+}
+
 /* ================== 动画 ================== */
 function animate(){
-  ctx.fillStyle="rgba(0,0,0,0.14)";
+  ctx.fillStyle="rgba(0,0,0,0.15)";
   ctx.fillRect(0,0,canvas.width,canvas.height);
   for(let i=particles.length-1;i>=0;i--){
     const p=particles[i];
@@ -190,7 +220,7 @@ document.getElementById("startScreen").onclick=()=>{
   document.getElementById("startScreen").style.display="none";
   started=true;
   randomFirework(canvas.width/2,canvas.height/2);
-  setInterval(randomFirework,420);
+  setInterval(randomFirework,480);  /* ⭐ 更慢 */
   setTimeout(()=>{
     document.getElementById("finalMessage").style.display="block";
     messageShown=true;
@@ -203,9 +233,9 @@ canvas.addEventListener("pointerdown",e=>{
   if(!started||!messageShown) return;
   const now=Date.now();
   if(now-lastTap<300){
-    heartWithName(e.clientX,e.clientY);
+    cakeFirework(e.clientX,e.clientY);   // ⭐ 双击 → 蛋糕
   }else{
-    randomFirework(e.clientX,e.clientY);
+    heartWithName(e.clientX,e.clientY); // ⭐ 单击 → 心+名字
   }
   lastTap=now;
 });
