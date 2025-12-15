@@ -65,7 +65,7 @@
 </head>
 <body>
 
-<div id="startScreen">👆 点击开始 🎉<span></span></div>
+<div id="startScreen">👆 <br> 🎉<span></span></div>
 <div id="finalMessage"></div>
 <canvas id="canvas"></canvas>
 
@@ -80,7 +80,7 @@ const ctx = canvas.getContext("2d");
 const startScreen = document.getElementById("startScreen");
 const finalMessage = document.getElementById("finalMessage");
 
-startScreen.querySelector("span").innerText = "轻触屏幕，点亮生日烟花";
+startScreen.querySelector("span").innerText = "";
 finalMessage.innerText = `🎉 生日快乐！ 🎉`;
 
 canvas.width = innerWidth;
